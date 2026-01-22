@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GRID Teams Viewer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <header class="top-bar">
+      <h1>Teams Snapshot</h1>
+      <nav class="nav-links">
+        <a href="index.html">Teams</a>
+        <a href="player-search.html">Player Search</a>
+        <a href="team-roster.html">Team Roster</a>
+      </nav>
+    </header>
+    <div class="status" id="status">Loading teams...</div>
+    <div class="grid" id="team-grid"></div>
+  </main>
+
+  <script>
+    async function loadTeams() {
+      const status = document.getElementById("status");
+      const grid = document.getElementById("team-grid");
+      try {
+        const response = await fetch("teamData.json", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const teams = data?.teams?.edges ?? [];
+        status.textContent = `Showing ${teams.length} teams (total available: ${data?.teams?.totalCount ?? "?"})`;
+        teams.forEach(({ node }) => {
+          const card = document.createElement("article");
+          card.className = "card";
+
+          const logo = document.createElement("img");
+          logo.className = "logo";
+          logo.alt = `${node.name} logo`;
+          logo.src = node.logoUrl;
+          card.appendChild(logo);
+
+          const name = document.createElement("h2");
+          name.textContent = node.name;
+          name.style.margin = "0.3rem 0";
+          name.style.fontSize = "1.15rem";
+          card.appendChild(name);
+
+          const colors = document.createElement("div");
+          colors.className = "colors";
+          [node.colorPrimary, node.colorSecondary].forEach((value) => {
+            if (!value) return;
+            const swatch = document.createElement("div");
+            swatch.className = "swatch";
+            swatch.title = value;
+            swatch.style.background = value;
+            colors.appendChild(swatch);
+          });
+          if (colors.children.length) card.appendChild(colors);
+
+          if (node.externalLinks?.length) {
+            const list = document.createElement("div");
+            list.className = "external";
+            node.externalLinks.forEach((link) => {
+              const provider = link?.dataProvider?.name ?? "Provider";
+              const extId = link?.externalEntity?.id ?? "N/A";
+              const line = document.createElement("div");
+              line.textContent = `${provider}: ${extId}`;
+              list.appendChild(line);
+            });
+            card.appendChild(list);
+          }
+
+          grid.appendChild(card);
+        });
+      } catch (error) {
+        status.textContent = `Failed to load data: ${error.message}`;
+      }
+    }
+
+    loadTeams();
+  </script>
+</body>
+</html>

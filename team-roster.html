@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Team Roster Search</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <header class="top-bar">
+      <h1>Find Team Rosters</h1>
+      <nav class="nav-links">
+        <a href="index.html">Teams</a>
+        <a href="player-search.html">Player Search</a>
+        <a href="team-roster.html">Team Roster</a>
+      </nav>
+    </header>
+
+    <p>Query GRID for a Valorant team by name, then show the players currently associated with that team (same logic as <code>getTeamPlayers</code>).</p>
+
+    <form id="team-form" class="form-grid">
+      <label>
+        API Key
+        <input id="teamApiKey" type="password" required autocomplete="off" placeholder="Enter x-api-key">
+      </label>
+      <label>
+        Team name
+        <input id="teamName" required placeholder="e.g. Cloud9">
+      </label>
+      <label>
+        Max players
+        <input id="teamLimit" type="number" min="1" max="50" value="20">
+      </label>
+      <button type="submit">Fetch Roster</button>
+    </form>
+
+    <div class="status" id="teamStatus">Awaiting search…</div>
+    <div class="results" id="teamResults"></div>
+  </main>
+
+  <script>
+    const API_URL = "https://api-op.grid.gg/central-data/graphql";
+    const GAME_ID = "6";
+
+    const form = document.getElementById("team-form");
+    const statusEl = document.getElementById("teamStatus");
+    const resultsEl = document.getElementById("teamResults");
+
+    const TEAM_QUERY = `
+      query GetTeamId($teamFilter: TeamFilter!) {
+        teams(filter: $teamFilter, first: 1) {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+    `;
+
+    const ROSTER_QUERY = `
+      query GetRoster($playerFilter: PlayerFilter!, $first: Int!) {
+        players(filter: $playerFilter, first: $first) {
+          edges {
+            node {
+              id
+              nickname
+              title { name }
+              team { name }
+            }
+          }
+        }
+      }
+    `;
+
+    async function runQuery(apiKey, query, variables) {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey
+        },
+        body: JSON.stringify({ query, variables })
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const payload = await response.json();
+      if (payload.errors) {
+        throw new Error(payload.errors.map((err) => err.message).join("; "));
+      }
+      return payload.data;
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const apiKey = document.getElementById("teamApiKey").value.trim();
+      const teamName = document.getElementById("teamName").value.trim();
+      const limit = Number(document.getElementById("teamLimit").value) || 20;
+
+      if (!apiKey) {
+        statusEl.textContent = "API key is required.";
+        return;
+      }
+      if (!teamName) {
+        statusEl.textContent = "Enter a team name.";
+        return;
+      }
+
+      statusEl.textContent = "Looking up team…";
+      resultsEl.innerHTML = "";
+      form.querySelector("button").disabled = true;
+
+      try {
+        const teamData = await runQuery(apiKey, TEAM_QUERY, {
+          teamFilter: {
+            titleId: GAME_ID,
+            name: { contains: teamName }
+          }
+        });
+
+        const edges = teamData?.teams?.edges ?? [];
+        if (!edges.length) {
+          statusEl.textContent = `No Valorant team found matching "${teamName}".`;
+          return;
+        }
+
+        const team = edges[0].node;
+        statusEl.textContent = `Team found: ${team.name} (ID ${team.id}). Fetching roster…`;
+
+        const rosterData = await runQuery(apiKey, ROSTER_QUERY, {
+          playerFilter: {
+            titleId: GAME_ID,
+            teamIdFilter: { id: team.id }
+          },
+          first: limit
+        });
+
+        const players = rosterData?.players?.edges ?? [];
+        if (!players.length) {
+          statusEl.textContent = `No active players found for ${team.name}.`;
+          return;
+        }
+
+        statusEl.textContent = `Showing ${players.length} player(s) for ${team.name}.`;
+        players.forEach(({ node }) => {
+          const card = document.createElement("article");
+          card.className = "card";
+
+          const nameEl = document.createElement("h2");
+          nameEl.textContent = node.nickname ?? "Unknown";
+          card.appendChild(nameEl);
+
+          const idEl = document.createElement("span");
+          idEl.textContent = `ID: ${node.id ?? "?"}`;
+          card.appendChild(idEl);
+
+          const titleEl = document.createElement("span");
+          titleEl.textContent = `Title: ${node.title?.name ?? "N/A"}`;
+          card.appendChild(titleEl);
+
+          const teamEl = document.createElement("span");
+          teamEl.textContent = `Team: ${node.team?.name ?? "N/A"}`;
+          card.appendChild(teamEl);
+
+          resultsEl.appendChild(card);
+        });
+      } catch (error) {
+        statusEl.textContent = `Search failed: ${error.message}`;
+      } finally {
+        form.querySelector("button").disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
