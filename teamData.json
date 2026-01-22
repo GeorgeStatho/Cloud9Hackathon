@@ -1,0 +1,905 @@
+{
+  "teams": {
+    "totalCount": 1614,
+    "pageInfo": {
+      "hasPreviousPage": false,
+      "hasNextPage": true,
+      "startCursor": "PjMLC1oLC0ILC1oLCw==",
+      "endCursor": "PjMLC1oLC0NERgsLWgsL"
+    },
+    "edges": [
+      {
+        "cursor": "PjMLC1oLC0ILC1oLCw==",
+        "node": {
+          "id": "5",
+          "name": "3DMAX",
+          "colorPrimary": "#DA1E28",
+          "colorSecondary": "#FBC817",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/7547ae4d97e4e0c4058a642ac57c6747",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0ZECwtaCws=",
+        "node": {
+          "id": "13",
+          "name": "ALTERNATE aTTaX",
+          "colorPrimary": "#750E13",
+          "colorSecondary": "#FBC817",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/35302b73f3797cb49687355b4bd3e12c",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "108233466257190667"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0VDCwtaCws=",
+        "node": {
+          "id": "24",
+          "name": "Ninjas in Pyjamas",
+          "colorPrimary": "#4adaff",
+          "colorSecondary": "#daff00",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/35c97a5b06bac7e16406401265c97d42",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105681057727144862"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0VCCwtaCws=",
+        "node": {
+          "id": "25",
+          "name": "Alliance",
+          "colorPrimary": "#00884b",
+          "colorSecondary": "#9fa7a7",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/5c50ebdce4b1890c640b663d9b4328a1",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105751489719953458"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0VOCwtaCws=",
+        "node": {
+          "id": "29",
+          "name": "Gambit Esports",
+          "colorPrimary": "#a2191f",
+          "colorSecondary": "#726180",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/265d4b8b7f01f1caf808b4e7a834faaa",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "107939538812978854"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0NFCwtaCws=",
+        "node": {
+          "id": "42",
+          "name": "BOOM Esports",
+          "colorPrimary": "#DA1E28",
+          "colorSecondary": "#FBC817",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/528a28f13f5756cfbfeac90ac78dd7a0",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105750884620888004"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0FBCwtaCws=",
+        "node": {
+          "id": "66",
+          "name": "forZe",
+          "colorPrimary": "#FBC817",
+          "colorSecondary": "#DA1E28",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/81cdfd262ee9c2e237c0d034d3e14077",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105788174587511565"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0FPCwtaCws=",
+        "node": {
+          "id": "68",
+          "name": "GIANTX (1)",
+          "colorPrimary": "#3c6df0",
+          "colorSecondary": "#89a2f6",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/21419a8bcc8c87f3ab6acf21da02bd5b",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105830904252954968"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0FOCwtaCws=",
+        "node": {
+          "id": "69",
+          "name": "Movistar Riders",
+          "colorPrimary": "#00539a",
+          "colorSecondary": "#726180",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/c485a285bb900dcdac6a4798004c1d76",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "107722633837616669"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0BFCwtaCws=",
+        "node": {
+          "id": "72",
+          "name": "MAD DOG'S PACT",
+          "colorPrimary": "#5e6868",
+          "colorSecondary": "#750e13",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/d6da5698b2fd4721ac9ba68b6851d3d1",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0BOCwtaCws=",
+        "node": {
+          "id": "79",
+          "name": "Cloud9",
+          "colorPrimary": "#0072c3",
+          "colorSecondary": "#9fa7a7",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/62118a302ef0900c7e7cc7b52eb2ca49",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "106013968992887532"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC09HCwtaCws=",
+        "node": {
+          "id": "80",
+          "name": "FaZe Clan",
+          "colorPrimary": "#fa4d56",
+          "colorSecondary": "#750e13",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/8219c228bea68e3798e170d7308ad76d",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105748032549777972"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC09GCwtaCws=",
+        "node": {
+          "id": "81",
+          "name": "MIBR (1)",
+          "colorPrimary": "#726180",
+          "colorSecondary": "#750e13",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/232c1e60a45d9f47bb5425a5ead72ff2",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "108058641500699213"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC09FCwtaCws=",
+        "node": {
+          "id": "82",
+          "name": "Natus Vincere",
+          "colorPrimary": "#fbc817",
+          "colorSecondary": "#750e13",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/64a155fa2039125daee99c371ef478e8",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC09ECwtaCws=",
+        "node": {
+          "id": "83",
+          "name": "Team Liquid",
+          "colorPrimary": "#FFB000",
+          "colorSecondary": "#5a3ec8",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/f70296f9d298ca02968da2948a7853ac",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105680883461219195"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC09DCwtaCws=",
+        "node": {
+          "id": "84",
+          "name": "Queso",
+          "colorPrimary": "#fbc817",
+          "colorSecondary": "#00b6cb",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/be807a7e381941a2c360590def953c94",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC05HCwtaCws=",
+        "node": {
+          "id": "90",
+          "name": "Team Vitality",
+          "colorPrimary": "#FBC817",
+          "colorSecondary": "#DA1E28",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/d386b225a0563e211e798a6fb02c0e15",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "106013381894847385"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC05GCwtaCws=",
+        "node": {
+          "id": "91",
+          "name": "MOUZ",
+          "colorPrimary": "#da1e28",
+          "colorSecondary": "#dc267f",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/7b59d90baa74c1cc70598b6852001627",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "107773248725928321"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC05DCwtaCws=",
+        "node": {
+          "id": "94",
+          "name": "Fnatic",
+          "colorPrimary": "#fe6100",
+          "colorSecondary": "#6f7878",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/fb84562e92e5ee0b0f66daba65c6ee65",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105680972836508184"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC05CCwtaCws=",
+        "node": {
+          "id": "95",
+          "name": "OpTic Gaming",
+          "colorPrimary": "#95d13c",
+          "colorSecondary": "#750e13",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/006fcfa6617a77ed46b715ba0d640cde",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "107772915726436635"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC05BCwtaCws=",
+        "node": {
+          "id": "96",
+          "name": "G2 Esports",
+          "colorPrimary": "#de8636",
+          "colorSecondary": "#0072c3",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/f1735e5f2227b3ebc6e2bd1a38b9b092",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105680891295502820"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC05ACwtaCws=",
+        "node": {
+          "id": "97",
+          "name": "NRG",
+          "colorPrimary": "#12a3b4",
+          "colorSecondary": "#750e13",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/edc7c3f60522d6700ccc6afa083c3707",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105665339248060878"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC05OCwtaCws=",
+        "node": {
+          "id": "99",
+          "name": "FURIA",
+          "colorPrimary": "#726180",
+          "colorSecondary": "#3151b7",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/c5c3bc875f8e10b56ce095f0971c03f4",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105630080842965451"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0ZHRwsLWgsL",
+        "node": {
+          "id": "100",
+          "name": "Luminosity Gaming",
+          "colorPrimary": "#33b1ff",
+          "colorSecondary": "#00884b",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/2d81367ef9755da16a8c5eaf667f32d8",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105669797624417904"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0ZDTgsLWgsL",
+        "node": {
+          "id": "149",
+          "name": "BIG",
+          "colorPrimary": "#FBC817",
+          "colorSecondary": "#A33E00",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/410a53c16616f3ce1c99f8007a0eea6c",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "106633274534875127"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0ZCRAsLWgsL",
+        "node": {
+          "id": "153",
+          "name": "Permitta Unicorns",
+          "colorPrimary": "#cb71d7",
+          "colorSecondary": "#dc267f",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/391fc8f29dd3d946e089e2312f9e66a2",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "109625008153081772"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0ZBTgsLWgsL",
+        "node": {
+          "id": "169",
+          "name": "BREN ESPORTS",
+          "colorPrimary": "#ffb000",
+          "colorSecondary": "#9320a2",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/2d7f11ff64516c83ffaff2997d3d3256",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105749923225283582"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0ZARAsLWgsL",
+        "node": {
+          "id": "173",
+          "name": "Team Heretics",
+          "colorPrimary": "#00BAA1",
+          "colorSecondary": "#750e13",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/3fcbbe4a6ddb235481c105bc066831c6",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105751765959424656"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0VHQwsLWgsL",
+        "node": {
+          "id": "204",
+          "name": "Illuminar",
+          "colorPrimary": "#785EF0",
+          "colorSecondary": "#D8AE18",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/89e970747b7a382f26d2d748aeaf08fc",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0VBQQsLWgsL",
+        "node": {
+          "id": "266",
+          "name": "Godsent",
+          "colorPrimary": "#785EF0",
+          "colorSecondary": "#93791b",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/be27e034ea212279a41a5c9a30ebed0d",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0VPRgsLWgsL",
+        "node": {
+          "id": "281",
+          "name": "Evil Geniuses",
+          "colorPrimary": "#FBC817",
+          "colorSecondary": "#00539a",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/bc79e0a0bfed60984ca9a6a2005ff32e",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "107772960652844036"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0RGQgsLWgsL",
+        "node": {
+          "id": "315",
+          "name": "MVP Esports",
+          "colorPrimary": "#9320a2",
+          "colorSecondary": "#cb71d7",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/generic",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105749532179862291"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0RERgsLWgsL",
+        "node": {
+          "id": "331",
+          "name": "ORDER",
+          "colorPrimary": "#c22dd5",
+          "colorSecondary": "#dc267f",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/9f281941b89ccb54c67ae312614f50a6",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "107021874056446186"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0REQgsLWgsL",
+        "node": {
+          "id": "335",
+          "name": "T1",
+          "colorPrimary": "#da1e28",
+          "colorSecondary": "#8c9696",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/f196184453d8f7874dc33621fd4d9807",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105827039633208481"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0REQAsLWgsL",
+        "node": {
+          "id": "337",
+          "name": "100 Thieves",
+          "colorPrimary": "#00884b",
+          "colorSecondary": "#da1e28",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/d2a812773eb4be16fb663ab506843a2d",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105748037960121143"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0RDQwsLWgsL",
+        "node": {
+          "id": "344",
+          "name": "Dignitas",
+          "colorPrimary": "#fcb817",
+          "colorSecondary": "#da1e28",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/8ace50d131dda8bd071906f30e873e7d",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "106976771652907805"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0RDQgsLWgsL",
+        "node": {
+          "id": "345",
+          "name": "TSM",
+          "colorPrimary": "#da1e28",
+          "colorSecondary": "#6f7878",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/ee960ebd08b9d1fcfc01b4356c7b31fc",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105827036957504670"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0RCRgsLWgsL",
+        "node": {
+          "id": "351",
+          "name": "Immortals",
+          "colorPrimary": "#03cece",
+          "colorSecondary": "#40d5bb",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/f457570556aeddc7817a2546ef721d6e",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105665312228269898"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0RCTgsLWgsL",
+        "node": {
+          "id": "359",
+          "name": "EDward Gaming",
+          "colorPrimary": "#da1e28",
+          "colorSecondary": "#9fa7a7",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/f1f485acb151bd168248160d96e4e53b",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "108696151689107350"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0RBRgsLWgsL",
+        "node": {
+          "id": "361",
+          "name": "FunPlus Phoenix",
+          "colorPrimary": "#fa4d56",
+          "colorSecondary": "#d8ae18",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/90b55e249fbff2884884bef3b73ff054",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105680908693496715"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0RARgsLWgsL",
+        "node": {
+          "id": "371",
+          "name": "Suning",
+          "colorPrimary": "#fe8500",
+          "colorSecondary": "#ff7548",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/15f8647d08eb996bae098a0677c5a369",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0RORAsLWgsL",
+        "node": {
+          "id": "393",
+          "name": "TBD-1",
+          "colorPrimary": "#9fa7a7",
+          "colorSecondary": "#5e6868",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/106326dba237697c498c4f14df0a44ac",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0ROQwsLWgsL",
+        "node": {
+          "id": "394",
+          "name": "TBD-2",
+          "colorPrimary": "#9fa7a7",
+          "colorSecondary": "#5e6868",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/1f6e01d1fbfa7951d5810a04ebe53ef2",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0ROTgsLWgsL",
+        "node": {
+          "id": "399",
+          "name": "eSuba",
+          "colorPrimary": "#FBC817",
+          "colorSecondary": "#726180",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/2566c0129f86b2f2663d73da99b453c1",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0NHQwsLWgsL",
+        "node": {
+          "id": "404",
+          "name": "Gen.G",
+          "colorPrimary": "#b69419",
+          "colorSecondary": "#3151b7",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/2734dd1c5942f3d8a115ff0d0360f0ad",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105665378258561492"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0NGQwsLWgsL",
+        "node": {
+          "id": "414",
+          "name": "Spear Gaming",
+          "colorPrimary": "#0072c3",
+          "colorSecondary": "#da1e28",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/8fb7eb05111d9c7e02072809d08bbd05",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "106025399110462832"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0NGTgsLWgsL",
+        "node": {
+          "id": "419",
+          "name": "ahq eSports Club",
+          "colorPrimary": "#da1e28",
+          "colorSecondary": "#db7c00",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/aaf8abb133ae0a46e37559de1e105be1",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0NFRAsLWgsL",
+        "node": {
+          "id": "423",
+          "name": "DetonatioN FocusMe",
+          "colorPrimary": "#da1e28",
+          "colorSecondary": "#0072c3",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/8b6386493aa24b4c6e758faddf87bb64",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105787569021644540"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0NFQAsLWgsL",
+        "node": {
+          "id": "427",
+          "name": "Crest Gaming Act",
+          "colorPrimary": "#3c6df0",
+          "colorSecondary": "#00539a",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/5869dda342e5b239906fb3dfb0c8a00b",
+          "externalLinks": []
+        }
+      },
+      {
+        "cursor": "PjMLC1oLC0NERgsLWgsL",
+        "node": {
+          "id": "431",
+          "name": "QT DIG ∞",
+          "colorPrimary": "#da1e28",
+          "colorSecondary": "#0072C3",
+          "logoUrl": "https://cdn.grid.gg/assets/team-logos/ee5bbe37c8613ccf7a11e5a7716b9711",
+          "externalLinks": [
+            {
+              "dataProvider": {
+                "name": "VALORANT"
+              },
+              "externalEntity": {
+                "id": "105844586229890312"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
