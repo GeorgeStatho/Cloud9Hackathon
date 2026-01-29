@@ -25,7 +25,7 @@
       const status = document.getElementById("status");
       const grid = document.getElementById("team-grid");
       try {
-        const response = await fetch("teamData.json", { cache: "no-store" });
+        const response = await fetch("Data/teamData.json", { cache: "no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         const teams = data?.teams?.edges ?? [];
