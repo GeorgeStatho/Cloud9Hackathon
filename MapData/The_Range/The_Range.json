@@ -1,0 +1,20 @@
+{
+  "uuid": "5914d1e0-40c4-cfdd-6b88-eba06347686c",
+  "displayName": "The Range",
+  "narrativeDescription": null,
+  "tacticalDescription": null,
+  "coordinates": "45°26'FF'N,12°20'Q'E",
+  "displayIcon": null,
+  "listViewIcon": "https://media.valorant-api.com/maps/5914d1e0-40c4-cfdd-6b88-eba06347686c/listviewicon.png",
+  "listViewIconTall": "https://media.valorant-api.com/maps/5914d1e0-40c4-cfdd-6b88-eba06347686c/listviewicontall.png",
+  "splash": "https://media.valorant-api.com/maps/5914d1e0-40c4-cfdd-6b88-eba06347686c/splash.png",
+  "stylizedBackgroundImage": null,
+  "premierBackgroundImage": null,
+  "assetPath": "ShooterGame/Content/Maps/PovegliaV2/PovegliaV2_PrimaryAsset",
+  "mapUrl": "/Game/Maps/PovegliaV2/RangeV2",
+  "xMultiplier": 0,
+  "yMultiplier": 0,
+  "xScalarToAdd": 0,
+  "yScalarToAdd": 0,
+  "callouts": null
+}

@@ -1,0 +1,361 @@
+{
+  "uuid": "12452a9d-48c3-0b02-e7eb-0381c3520404",
+  "displayName": "Kasbah",
+  "narrativeDescription": null,
+  "tacticalDescription": null,
+  "coordinates": null,
+  "displayIcon": "https://media.valorant-api.com/maps/12452a9d-48c3-0b02-e7eb-0381c3520404/displayicon.png",
+  "listViewIcon": "https://media.valorant-api.com/maps/12452a9d-48c3-0b02-e7eb-0381c3520404/listviewicon.png",
+  "listViewIconTall": "https://media.valorant-api.com/maps/12452a9d-48c3-0b02-e7eb-0381c3520404/listviewicontall.png",
+  "splash": "https://media.valorant-api.com/maps/12452a9d-48c3-0b02-e7eb-0381c3520404/splash.png",
+  "stylizedBackgroundImage": "https://media.valorant-api.com/maps/12452a9d-48c3-0b02-e7eb-0381c3520404/stylizedbackgroundimage.png",
+  "premierBackgroundImage": null,
+  "assetPath": "ShooterGame/Content/Maps/HURM/HURM_Bowl/HURM_Bowl_PrimaryAsset",
+  "mapUrl": "/Game/Maps/HURM/HURM_Bowl/HURM_Bowl",
+  "xMultiplier": 0,
+  "yMultiplier": 0,
+  "xScalarToAdd": 0,
+  "yScalarToAdd": 0,
+  "callouts": [
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -0.00032101883,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Angle Box",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -0.00032101883,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Link",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Pit",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -0.00032101883,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Tower",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -0.00032101883,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Ramp",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Flat Box",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -0.00032101883,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -0.00032101883,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Nest",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -0.00044250488,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Tunnel",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -0.00032101883,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Window",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 179.9999,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Angle Box",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 179.9999,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Link",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 179.9999,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Pit",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 179.9999,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Tower",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 179.9999,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Ramp",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 179.9999,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Flat Box",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 179.9999,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 179.9999,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Nest",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 179.9999,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Tunnel",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 179.9999,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Window",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 200
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 180,
+        "roll": 0
+      }
+    }
+  ]
+}

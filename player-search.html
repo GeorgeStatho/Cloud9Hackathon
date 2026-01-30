@@ -46,6 +46,11 @@
 
     <div class="status" id="status">Awaiting search…</div>
     <div class="results" id="results"></div>
+    <section>
+      <h2>Player Detail</h2>
+      <div class="status" id="detail-status">Select a player to view details.</div>
+      <pre id="player-detail" style="background:#fff;padding:1rem;border-radius:8px;overflow:auto;max-height:320px;"></pre>
+    </section>
   </main>
 
   <script>
@@ -55,6 +60,9 @@
     const form = document.getElementById("search-form");
     const statusEl = document.getElementById("status");
     const resultsEl = document.getElementById("results");
+    const detailStatus = document.getElementById("detail-status");
+    const detailOutput = document.getElementById("player-detail");
+    let lastApiKey = "";
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -74,7 +82,10 @@
 
       statusEl.textContent = "Searching…";
       resultsEl.innerHTML = "";
+      detailStatus.textContent = "Select a player to view details.";
+      detailOutput.textContent = "";
       form.querySelector("button").disabled = true;
+      lastApiKey = apiKey;
 
       const query = `
         query GetPlayers($playerFilter: PlayerFilter, $first: Int!) {
@@ -149,6 +160,12 @@
           teamLine.textContent = `Team: ${node.team?.name ?? "No team"}`;
           card.appendChild(teamLine);
 
+          const infoLink = document.createElement("button");
+          infoLink.type = "button";
+          infoLink.textContent = "View full profile";
+          infoLink.addEventListener("click", () => loadPlayerDetail(node.id));
+          card.appendChild(infoLink);
+
           resultsEl.appendChild(card);
         });
       } catch (error) {
@@ -157,6 +174,55 @@
         form.querySelector("button").disabled = false;
       }
     });
+
+    const PLAYER_INFO_QUERY = `
+      query PlayerInfo($playerId: ID!) {
+          player(id: $playerId) {
+            id
+            nickname
+            roles {
+              id
+              name
+              title {
+                name
+              }
+            }
+          }
+        }
+    `;
+
+    async function loadPlayerDetail(playerId) {
+      if (!lastApiKey) {
+        detailStatus.textContent = "Run a search and provide an API key first.";
+        return;
+      }
+      detailStatus.textContent = "Fetching player profile…";
+      detailOutput.textContent = "";
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": lastApiKey
+          },
+          body: JSON.stringify({ query: PLAYER_INFO_QUERY, variables: { playerId } })
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        if (payload.errors) {
+          throw new Error(payload.errors.map((err) => err.message).join("; "));
+        }
+        const player = payload?.data?.player;
+        if (!player) {
+          detailStatus.textContent = "Player not found.";
+          return;
+        }
+        detailStatus.textContent = `Profile loaded for ${player.nickname ?? player.fullName ?? player.id}.`;
+        detailOutput.textContent = JSON.stringify(player, null, 2);
+      } catch (error) {
+        detailStatus.textContent = `Failed to load details: ${error.message}`;
+      }
+    }
   </script>
 </body>
 </html>

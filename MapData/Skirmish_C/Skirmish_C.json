@@ -1,0 +1,20 @@
+{
+  "uuid": "a264de0f-4a04-9c78-c97a-a6b192ce6e86",
+  "displayName": "Skirmish C",
+  "narrativeDescription": null,
+  "tacticalDescription": null,
+  "coordinates": null,
+  "displayIcon": null,
+  "listViewIcon": "https://media.valorant-api.com/maps/a264de0f-4a04-9c78-c97a-a6b192ce6e86/listviewicon.png",
+  "listViewIconTall": "https://media.valorant-api.com/maps/a264de0f-4a04-9c78-c97a-a6b192ce6e86/listviewicontall.png",
+  "splash": "https://media.valorant-api.com/maps/a264de0f-4a04-9c78-c97a-a6b192ce6e86/splash.png",
+  "stylizedBackgroundImage": "https://media.valorant-api.com/maps/a264de0f-4a04-9c78-c97a-a6b192ce6e86/stylizedbackgroundimage.png",
+  "premierBackgroundImage": null,
+  "assetPath": "ShooterGame/Content/Maps/Duel/Duel_3/Skirmish_3_PrimaryAsset",
+  "mapUrl": "/Game/Maps/Duel/Duel_3/Skirmish_C",
+  "xMultiplier": 0,
+  "yMultiplier": 0,
+  "xScalarToAdd": 0,
+  "yScalarToAdd": 0,
+  "callouts": null
+}

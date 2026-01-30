@@ -1,0 +1,357 @@
+{
+  "uuid": "2fe4ed3a-450a-948b-6d6b-e89a78e680a9",
+  "displayName": "Lotus",
+  "narrativeDescription": null,
+  "tacticalDescription": "A/B/C Sites",
+  "coordinates": "14°07'AD.4\"N8 74°53'XY\"E8",
+  "displayIcon": "https://media.valorant-api.com/maps/2fe4ed3a-450a-948b-6d6b-e89a78e680a9/displayicon.png",
+  "listViewIcon": "https://media.valorant-api.com/maps/2fe4ed3a-450a-948b-6d6b-e89a78e680a9/listviewicon.png",
+  "listViewIconTall": "https://media.valorant-api.com/maps/2fe4ed3a-450a-948b-6d6b-e89a78e680a9/listviewicontall.png",
+  "splash": "https://media.valorant-api.com/maps/2fe4ed3a-450a-948b-6d6b-e89a78e680a9/splash.png",
+  "stylizedBackgroundImage": "https://media.valorant-api.com/maps/2fe4ed3a-450a-948b-6d6b-e89a78e680a9/stylizedbackgroundimage.png",
+  "premierBackgroundImage": "https://media.valorant-api.com/maps/2fe4ed3a-450a-948b-6d6b-e89a78e680a9/premierbackgroundimage.png",
+  "assetPath": "ShooterGame/Content/Maps/Jam/Jam_PrimaryAsset",
+  "mapUrl": "/Game/Maps/Jam/Jam",
+  "xMultiplier": 7.2e-05,
+  "yMultiplier": -7.2e-05,
+  "xScalarToAdd": 0.454789,
+  "yScalarToAdd": 0.917752,
+  "callouts": [
+    {
+      "regionName": "Top",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 9260.3,
+        "y": 5045.5884,
+        "z": 80.35567
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Drop",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 9516.38,
+        "y": 6092.8936,
+        "z": 232.63
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Site",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 7735.5396,
+        "y": 5557.309,
+        "z": 232.63
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Hut",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 7917.4614,
+        "y": 5557.309,
+        "z": 232.63098
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Tree",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 6149.525,
+        "y": 5557.309,
+        "z": 232.63074
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Door",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 5608.7563,
+        "y": 5203.91,
+        "z": 232.63055
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Main",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 5288.3022,
+        "y": 4159.762,
+        "z": 232.63074
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Rubble",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 4401.0713,
+        "y": 4918.189,
+        "z": 232.66272
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Root",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 4401.0713,
+        "y": 3294.1523,
+        "z": 232.66956
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Lobby",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 2685.951,
+        "y": 2927.1755,
+        "z": 232.66956
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Lobby",
+      "superRegion": "ECalloutSuperRegion::C",
+      "superRegionName": "C",
+      "location": {
+        "x": 1403.5685,
+        "y": -1576.5884,
+        "z": 100.21295
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Pillars",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": 3565.3691,
+        "y": 668.18317,
+        "z": 167.20193
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Main",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": 4876.832,
+        "y": -47.87195,
+        "z": 167.20193
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Door",
+      "superRegion": "ECalloutSuperRegion::C",
+      "superRegionName": "C",
+      "location": {
+        "x": 4818.6655,
+        "y": -1752.8021,
+        "z": 232.62439
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Site",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": 6368.0327,
+        "y": 668.18317,
+        "z": 167.20438
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Link",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 6011.0664,
+        "y": 2087.6528,
+        "z": 167.20193
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Upper",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": 7682.943,
+        "y": 1517.3606,
+        "z": 167.20193
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Waterfall",
+      "superRegion": "ECalloutSuperRegion::C",
+      "superRegionName": "C",
+      "location": {
+        "x": 6719.804,
+        "y": -1994.2986,
+        "z": 71.56726
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Link",
+      "superRegion": "ECalloutSuperRegion::C",
+      "superRegionName": "C",
+      "location": {
+        "x": 7504.109,
+        "y": -1377.893,
+        "z": 71.56726
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Stairs",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 8257.875,
+        "y": 3860.9312,
+        "z": 232.63
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Mound",
+      "superRegion": "ECalloutSuperRegion::C",
+      "superRegionName": "C",
+      "location": {
+        "x": 3863.7183,
+        "y": -1576.5884,
+        "z": 125.12698
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Main",
+      "superRegion": "ECalloutSuperRegion::C",
+      "superRegionName": "C",
+      "location": {
+        "x": 5311.2646,
+        "y": -3148.162,
+        "z": 74.64343
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Bend",
+      "superRegion": "ECalloutSuperRegion::C",
+      "superRegionName": "C",
+      "location": {
+        "x": 5657.522,
+        "y": -5281.4395,
+        "z": 80.35518
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Site",
+      "superRegion": "ECalloutSuperRegion::C",
+      "superRegionName": "C",
+      "location": {
+        "x": 6676.6636,
+        "y": -4265.876,
+        "z": 80.35567
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Hall",
+      "superRegion": "ECalloutSuperRegion::C",
+      "superRegionName": "C",
+      "location": {
+        "x": 7902.0615,
+        "y": -4265.876,
+        "z": 80.35567
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Gravel",
+      "superRegion": "ECalloutSuperRegion::C",
+      "superRegionName": "C",
+      "location": {
+        "x": 8936.881,
+        "y": -1752.2874,
+        "z": 80.35567
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 9686.767,
+        "y": 1697.8223,
+        "z": 80.35567
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 1401.2915,
+        "y": 777.29834,
+        "z": 232.63013
+      },
+      "scale3D": null,
+      "rotation": null
+    }
+  ]
+}

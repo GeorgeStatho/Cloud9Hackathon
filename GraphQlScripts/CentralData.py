@@ -1,12 +1,9 @@
-import json
-from typing import Any, Dict
-
-from gql import Client, gql
-from gql.transport.requests import RequestsHTTPTransport
+from BasicFunctionalities import *
 
 from Keys import API_KEY
 API_URL = "https://api-op.grid.gg/central-data/graphql"
-GAME_ID = "6"
+STATS_URL="https://api-op.grid.gg/stats-feed/graphql"
+GAME_ID = "6" #Valorant game ID. Don't want LOL Data
 
 transport = RequestsHTTPTransport(
     url=API_URL,
@@ -60,7 +57,8 @@ def getTeams() -> Dict[str, Any]:
     writeToJSON(result, "teamData.json")
     return result
 
-def getTeamPlayers(team_name: str) -> Dict[str, Any]:
+
+def getTeamId(team_name:str)-> Dict[str,Any]:
     team_lookup = gql(
         """
         query GetTeamId($teamFilter: TeamFilter!) {
@@ -84,7 +82,12 @@ def getTeamPlayers(team_name: str) -> Dict[str, Any]:
     if not edges:
         raise ValueError(f"No team found matching '{team_name}' for title {GAME_ID}.")
     team_id = edges[0]["node"]["id"]
+    return team_id
 
+
+
+def getTeamPlayers(team_name: str) -> Dict[str, Any]:
+    team_id=getTeamId(team_name)
     roster_query = gql(
         """
         query GetTeamRoster($playerFilter: PlayerFilter!) {
@@ -159,12 +162,59 @@ def getPlayer(playerName: str, operator: str = "contains") -> Dict[str, Any]:
     writeToJSON(result, "PlayerData.json")
     return result
 
+def getPlayerInfo(player_id: str) -> Dict[str, Any]:
+    query = gql(
+        """
+        query PlayerInfo($playerId: ID!) {
+          player(id: $playerId) {
+            id
+            nickname
+            roles {
+              id
+              name
+              title {
+                name
+              }
+            }
+          }
+        }
+        """
+    )
+    result = client.execute(query, variable_values={"playerId": player_id})
+    player = result.get("player")
+    if not player:
+        raise ValueError(f"No player found with ID '{player_id}'.")
+    nickname = player.get("nickname") or player.get("fullName") or f"player_{player_id}"
+    filename = f"{nickname}_info.json".replace(" ", "_")
+    writeToJSON(result, filename)
+    return result
 
-def writeToJSON(result: Dict[str, Any], filename: str) -> None:
-    with open(filename, "w", encoding="utf-8") as team_file:
-        json.dump(result, team_file, indent=2, ensure_ascii=False)
-    print(f"Results written to {filename}")
-
+def getTeamSeries(teamID:str)->Dict[str,Any]:
+    query="""query Series($teamID: ID!) {
+       allSeries(filter: { teams: { id: { in: [$teamID] } } }) {
+           totalCount
+           edges {
+               node {
+                   id
+                   startTimeScheduled
+                   teams {
+                       baseInfo {
+                           id
+                           name
+                       }
+                   }
+               }
+           }
+       }
+   }"""
+    result = client.execute(query, variable_values={"teamId": teamID})
+    series = result.get("id")
+    if not series:
+        raise ValueError(f"No team found with ID '{teamID}'.")
+    series = series.get("id") or series.get("name")
+    filename = f"{series}_info.json".replace(" ", "_")
+    writeToJSON(result, filename)
+    return result
 
 if __name__ == "__main__":
-    getTeamPlayers("Cloud9")
+    print(getTeamId("9"))
