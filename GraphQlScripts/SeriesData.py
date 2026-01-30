@@ -1,6 +1,6 @@
-from BasicFunctionalities import *
+from GraphQlScripts.BasicFunctionalities import *
 
-from Keys import API_KEY
+from GraphQlScripts.Keys import API_KEY
 
 API_URL = "https://api.grid.gg/file-download/list/{seriesId}"
 GAME_ID = "6"  # Valorant game ID. Don't want LOL Data
