@@ -1,0 +1,313 @@
+{
+  "uuid": "d960549e-485c-e861-8d71-aa9d1aed12a2",
+  "displayName": "Split",
+  "narrativeDescription": null,
+  "tacticalDescription": "A/B Sites",
+  "coordinates": "35°41'CD'N,139°41'WX'E",
+  "displayIcon": "https://media.valorant-api.com/maps/d960549e-485c-e861-8d71-aa9d1aed12a2/displayicon.png",
+  "listViewIcon": "https://media.valorant-api.com/maps/d960549e-485c-e861-8d71-aa9d1aed12a2/listviewicon.png",
+  "listViewIconTall": "https://media.valorant-api.com/maps/d960549e-485c-e861-8d71-aa9d1aed12a2/listviewicontall.png",
+  "splash": "https://media.valorant-api.com/maps/d960549e-485c-e861-8d71-aa9d1aed12a2/splash.png",
+  "stylizedBackgroundImage": "https://media.valorant-api.com/maps/d960549e-485c-e861-8d71-aa9d1aed12a2/stylizedbackgroundimage.png",
+  "premierBackgroundImage": "https://media.valorant-api.com/maps/d960549e-485c-e861-8d71-aa9d1aed12a2/premierbackgroundimage.png",
+  "assetPath": "ShooterGame/Content/Maps/Bonsai/Bonsai_PrimaryAsset",
+  "mapUrl": "/Game/Maps/Bonsai/Bonsai",
+  "xMultiplier": 7.8e-05,
+  "yMultiplier": -7.8e-05,
+  "xScalarToAdd": 0.842188,
+  "yScalarToAdd": 0.697578,
+  "callouts": [
+    {
+      "regionName": "Back",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 7345.049,
+        "y": -7858.0405,
+        "z": -0.001953125
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Lobby",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 6814.217,
+        "y": -2457.7468,
+        "z": 300
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Main",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 6279.9795,
+        "y": -4492.833,
+        "z": 199.95233
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Rafters",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 5434.726,
+        "y": -6258.442,
+        "z": 549.9768
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Ramps",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 4330,
+        "y": -4750,
+        "z": 590
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Screens",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 5648.7144,
+        "y": -8868.611,
+        "z": 200.00006
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Sewer",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 4862.6064,
+        "y": -2367.2578,
+        "z": 59.34729
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Site",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 6588.6597,
+        "y": -6761.131,
+        "z": 100.00012
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Tower",
+      "superRegion": "ECalloutSuperRegion::A",
+      "superRegionName": "A",
+      "location": {
+        "x": 4636.7925,
+        "y": -6748.2334,
+        "z": 650.00006
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 1901.97,
+        "y": 59.588867,
+        "z": 300.00012
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Alley",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": -1158.0048,
+        "y": -8066.301,
+        "z": 399.99982
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Back",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": -3107.181,
+        "y": -7417.2607,
+        "z": 300.00012
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Link",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": -27.670135,
+        "y": -2369.784,
+        "z": 349.99997
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Garage",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": -2190.7827,
+        "y": -3848.0293,
+        "z": 300.00018
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Rafters",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": -637.1397,
+        "y": -6070.6167,
+        "z": 922.2615
+      },
+      "scale3D": {
+        "x": 1,
+        "y": 1.0198256,
+        "z": 1
+      },
+      "rotation": null
+    },
+    {
+      "regionName": "Site",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": -2167.2456,
+        "y": -6264.7715,
+        "z": 399.99982
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Stairs",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": 1061.493,
+        "y": -6760.976,
+        "z": 839.9651
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Tower",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": 168.89589,
+        "y": -5290.194,
+        "z": 900
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Lobby",
+      "superRegion": "ECalloutSuperRegion::B",
+      "superRegionName": "B",
+      "location": {
+        "x": -1271.6421,
+        "y": -1983.6248,
+        "z": 300.00012
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 2142.3635,
+        "y": -8964.969,
+        "z": 500.00012
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Bottom",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": 1922.6552,
+        "y": -2899.4626,
+        "z": 450
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Mail",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": 1155.3333,
+        "y": -4808.6436,
+        "z": 800.00024
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Top",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": 2021.9575,
+        "y": -4596.936,
+        "z": 649.9999
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Vent",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": 3155.1648,
+        "y": -5338.5215,
+        "z": 650
+      },
+      "scale3D": null,
+      "rotation": null
+    }
+  ]
+}

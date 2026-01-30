@@ -1,0 +1,177 @@
+{
+  "uuid": "690b3ed2-4dff-945b-8223-6da834e30d24",
+  "displayName": "District",
+  "narrativeDescription": null,
+  "tacticalDescription": null,
+  "coordinates": null,
+  "displayIcon": "https://media.valorant-api.com/maps/690b3ed2-4dff-945b-8223-6da834e30d24/displayicon.png",
+  "listViewIcon": "https://media.valorant-api.com/maps/690b3ed2-4dff-945b-8223-6da834e30d24/listviewicon.png",
+  "listViewIconTall": "https://media.valorant-api.com/maps/690b3ed2-4dff-945b-8223-6da834e30d24/listviewicontall.png",
+  "splash": "https://media.valorant-api.com/maps/690b3ed2-4dff-945b-8223-6da834e30d24/splash.png",
+  "stylizedBackgroundImage": "https://media.valorant-api.com/maps/690b3ed2-4dff-945b-8223-6da834e30d24/stylizedbackgroundimage.png",
+  "premierBackgroundImage": null,
+  "assetPath": "ShooterGame/Content/Maps/HURM/HURM_Alley/HURM_Alley_PrimaryAsset",
+  "mapUrl": "/Game/Maps/HURM/HURM_Alley/HURM_Alley",
+  "xMultiplier": 0,
+  "yMultiplier": 0,
+  "xScalarToAdd": 0,
+  "yScalarToAdd": 0,
+  "callouts": [
+    {
+      "regionName": "Box",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": -2225,
+        "y": 1700,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Nest",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": -2200,
+        "y": 800,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": -1200,
+        "y": 3000,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Stairs",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": -200,
+        "y": 1200,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Wall",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 700,
+        "y": 900,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Box",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": -2225,
+        "y": -2900,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Nest",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": -2200,
+        "y": -1700,
+        "z": -199.99951
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": -1200,
+        "y": -3000,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Stairs",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": -200,
+        "y": -1200,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Wall",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 700,
+        "y": -900,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Generator",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": -1400,
+        "y": -1000,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Horseshoe",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": -3200,
+        "y": -900,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Sewer",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": 700,
+        "y": -900,
+        "z": -200
+      },
+      "scale3D": null,
+      "rotation": null
+    }
+  ]
+}

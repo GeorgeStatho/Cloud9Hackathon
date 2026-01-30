@@ -1,0 +1,20 @@
+{
+  "uuid": "de28aa9b-4cbe-1003-320e-6cb3ec309557",
+  "displayName": "Piazza",
+  "narrativeDescription": null,
+  "tacticalDescription": null,
+  "coordinates": null,
+  "displayIcon": "https://media.valorant-api.com/maps/de28aa9b-4cbe-1003-320e-6cb3ec309557/displayicon.png",
+  "listViewIcon": "https://media.valorant-api.com/maps/de28aa9b-4cbe-1003-320e-6cb3ec309557/listviewicon.png",
+  "listViewIconTall": "https://media.valorant-api.com/maps/de28aa9b-4cbe-1003-320e-6cb3ec309557/listviewicontall.png",
+  "splash": "https://media.valorant-api.com/maps/de28aa9b-4cbe-1003-320e-6cb3ec309557/splash.png",
+  "stylizedBackgroundImage": "https://media.valorant-api.com/maps/de28aa9b-4cbe-1003-320e-6cb3ec309557/stylizedbackgroundimage.png",
+  "premierBackgroundImage": null,
+  "assetPath": "ShooterGame/Content/Maps/HURM/HURM_Yard/HURM_Yard_PrimaryAsset",
+  "mapUrl": "/Game/Maps/HURM/HURM_Yard/HURM_Yard",
+  "xMultiplier": 0,
+  "yMultiplier": 0,
+  "xScalarToAdd": 0,
+  "yScalarToAdd": 0,
+  "callouts": null
+}

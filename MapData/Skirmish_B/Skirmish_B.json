@@ -1,0 +1,20 @@
+{
+  "uuid": "a38a3f9a-4042-844c-8970-a3ac2f7ce93d",
+  "displayName": "Skirmish B",
+  "narrativeDescription": null,
+  "tacticalDescription": null,
+  "coordinates": null,
+  "displayIcon": null,
+  "listViewIcon": "https://media.valorant-api.com/maps/a38a3f9a-4042-844c-8970-a3ac2f7ce93d/listviewicon.png",
+  "listViewIconTall": "https://media.valorant-api.com/maps/a38a3f9a-4042-844c-8970-a3ac2f7ce93d/listviewicontall.png",
+  "splash": "https://media.valorant-api.com/maps/a38a3f9a-4042-844c-8970-a3ac2f7ce93d/splash.png",
+  "stylizedBackgroundImage": "https://media.valorant-api.com/maps/a38a3f9a-4042-844c-8970-a3ac2f7ce93d/stylizedbackgroundimage.png",
+  "premierBackgroundImage": null,
+  "assetPath": "ShooterGame/Content/Maps/Duel/Duel_2/Skirmish_2_PrimaryAsset",
+  "mapUrl": "/Game/Maps/Duel/Duel_2/Skirmish_B",
+  "xMultiplier": 0,
+  "yMultiplier": 0,
+  "xScalarToAdd": 0,
+  "yScalarToAdd": 0,
+  "callouts": null
+}

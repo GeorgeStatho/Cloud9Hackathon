@@ -1,0 +1,189 @@
+{
+  "uuid": "2c09d728-42d5-30d8-43dc-96a05cc7ee9d",
+  "displayName": "Drift",
+  "narrativeDescription": null,
+  "tacticalDescription": null,
+  "coordinates": null,
+  "displayIcon": "https://media.valorant-api.com/maps/2c09d728-42d5-30d8-43dc-96a05cc7ee9d/displayicon.png",
+  "listViewIcon": "https://media.valorant-api.com/maps/2c09d728-42d5-30d8-43dc-96a05cc7ee9d/listviewicon.png",
+  "listViewIconTall": "https://media.valorant-api.com/maps/2c09d728-42d5-30d8-43dc-96a05cc7ee9d/listviewicontall.png",
+  "splash": "https://media.valorant-api.com/maps/2c09d728-42d5-30d8-43dc-96a05cc7ee9d/splash.png",
+  "stylizedBackgroundImage": "https://media.valorant-api.com/maps/2c09d728-42d5-30d8-43dc-96a05cc7ee9d/stylizedbackgroundimage.png",
+  "premierBackgroundImage": null,
+  "assetPath": "ShooterGame/Content/Maps/HURM/HURM_Helix/HURM_Helix_PrimaryAsset",
+  "mapUrl": "/Game/Maps/HURM/HURM_Helix/HURM_Helix",
+  "xMultiplier": 0,
+  "yMultiplier": 0,
+  "xScalarToAdd": 0,
+  "yScalarToAdd": 0,
+  "callouts": [
+    {
+      "regionName": "Alley",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 3200,
+        "y": 2200,
+        "z": 1400
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 180.00012,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Nest",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 2000,
+        "y": -3400,
+        "z": 1400
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 0.000141,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": 1200,
+        "y": -2200,
+        "z": 1400
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 0.000141,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Tower",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": -400,
+        "y": -1800,
+        "z": 1400
+      },
+      "scale3D": null,
+      "rotation": null
+    },
+    {
+      "regionName": "Yard",
+      "superRegion": "ECalloutSuperRegion::AttackerSide",
+      "superRegionName": "Attacker Side",
+      "location": {
+        "x": -1600,
+        "y": -3400,
+        "z": 1400
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": 0.00014066696,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Alley",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": -3200,
+        "y": -2200,
+        "z": 1400
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -0.00013923645,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Nest",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": -2000,
+        "y": 3400,
+        "z": 1400
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -179.99995,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Spawn",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": -1200,
+        "y": 2200,
+        "z": 1400
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -179.99998,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Tower",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 400,
+        "y": 1800,
+        "z": 1400
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -180.00009,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Yard",
+      "superRegion": "ECalloutSuperRegion::DefenderSide",
+      "superRegionName": "Defender Side",
+      "location": {
+        "x": 1600,
+        "y": 3400,
+        "z": 1400
+      },
+      "scale3D": null,
+      "rotation": {
+        "pitch": 0,
+        "yaw": -180.00009,
+        "roll": 0
+      }
+    },
+    {
+      "regionName": "Water",
+      "superRegion": "ECalloutSuperRegion::Mid",
+      "superRegionName": "Mid",
+      "location": {
+        "x": -800,
+        "y": -600,
+        "z": 1400
+      },
+      "scale3D": null,
+      "rotation": null
+    }
+  ]
+}
