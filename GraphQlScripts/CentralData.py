@@ -190,31 +190,26 @@ def getPlayerInfo(player_id: str) -> Dict[str, Any]:
     return result
 
 def getTeamSeries(teamID:str)->Dict[str,Any]:
-    query="""query Series($teamID: ID!) {
-       allSeries(filter: { teams: { id: { in: [$teamID] } } }) {
+    query = gql(
+        """
+        query Series($teamID: ID!) {
+          allSeries(filter: { teamIds: { in: [$teamID] } }) {
            totalCount
            edges {
                node {
                    id
-                   startTimeScheduled
-                   teams {
-                       baseInfo {
-                           id
-                           name
-                       }
                    }
                }
-           }
-       }
-   }"""
-    result = client.execute(query, variable_values={"teamId": teamID})
-    series = result.get("id")
+              }
+            }"""
+    )
+    result = client.execute(query, variable_values={"teamID": teamID})
+    series = result.get("allSeries")
     if not series:
-        raise ValueError(f"No team found with ID '{teamID}'.")
-    series = series.get("id") or series.get("name")
-    filename = f"{series}_info.json".replace(" ", "_")
+        raise ValueError(f"No series found for team ID '{teamID}'.")
+    filename = f"{teamID}_series.json".replace(" ", "_")
     writeToJSON(result, filename)
     return result
 
 if __name__ == "__main__":
-    print(getTeamId("9"))
+    print(getTeamSeries("97"))

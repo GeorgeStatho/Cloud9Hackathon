@@ -17,6 +17,8 @@ SERIES_DATA_DIR = "SeriesData"
 os.makedirs(SERIES_DATA_DIR, exist_ok=True)
 
 
+
+
 def download_series_files(series_id: str):
     url = API_URL.format(seriesId=series_id)
     response = requests.get(url, headers=headers, timeout=30)
@@ -24,8 +26,10 @@ def download_series_files(series_id: str):
     return response.json()
 print(download_series_files("2629390"))
 
-def download_file(full_url: str, output_filename: str):
-    output_path = os.path.join(SERIES_DATA_DIR, output_filename)
+def download_file(full_url: str, output_filename: str, output_path: str | None = None):
+    if output_path is None:
+        output_path = os.path.join(SERIES_DATA_DIR, output_filename)
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with requests.get(full_url, headers=headers, stream=True, timeout=60) as r:
         r.raise_for_status()
         with open(output_path, "wb") as f:
@@ -34,5 +38,5 @@ def download_file(full_url: str, output_filename: str):
                     f.write(chunk)
 
 files = download_series_files("2629390")["files"]
-first_file = files[0]
-download_file(first_file["fullURL"], first_file["fileName"])
+#first_file = files[0]
+#download_file(first_file["fullURL"], first_file["fileName"])
