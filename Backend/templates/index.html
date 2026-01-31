@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Team Pipeline Runner</title>
+    <style>
+      :root {
+        --bg: #0f1a1f;
+        --panel: #17252b;
+        --accent: #f5c542;
+        --muted: #b7c3c9;
+        --text: #e9f0f2;
+      }
+      body {
+        margin: 0;
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top left, #1b2b33, #0f1a1f 60%);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      .wrap {
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 24px;
+      }
+      .panel {
+        background: var(--panel);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      }
+      h1 {
+        margin: 0 0 16px;
+        font-size: 28px;
+      }
+      label {
+        display: block;
+        margin: 10px 0 6px;
+        color: var(--muted);
+      }
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #2c3d44;
+        background: #0f1a1f;
+        color: var(--text);
+      }
+      button {
+        margin-top: 16px;
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: none;
+        background: var(--accent);
+        color: #222;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 20px;
+      }
+      .list {
+        max-height: 240px;
+        overflow: auto;
+        font-size: 13px;
+        color: var(--muted);
+        background: #0f1a1f;
+        border-radius: 10px;
+        padding: 10px;
+      }
+      .log {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 13px;
+        white-space: pre-wrap;
+      }
+      .error {
+        color: #ff7b72;
+        margin-top: 10px;
+      }
+      @media (max-width: 800px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="panel">
+        <h1>Team Pipeline Runner</h1>
+        <form method="post">
+          <label for="api_key">API Key</label>
+          <input id="api_key" name="api_key" value="{{ api_key }}" placeholder="GRID API key" />
+          <label for="team_name">Team Name</label>
+          <input id="team_name" name="team_name" value="{{ team_name }}" placeholder="e.g. NRG" />
+          <button type="submit">Run Pipeline</button>
+        </form>
+        {% if error %}
+          <div class="error">{{ error }}</div>
+        {% endif %}
+      </div>
+
+      {% if logs %}
+      <div class="panel" style="margin-top:16px;">
+        <h2>Logs</h2>
+        <div class="list log">
+          {% for line in logs %}
+            {{ line }}{% if not loop.last %}\n{% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if outputs %}
+      <div class="grid">
+        <div class="panel">
+          <h2>Team Data</h2>
+          <div class="list">
+            {% for path in outputs.team_data_files %}
+              <div>{{ path }}</div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Player Files</h2>
+          <div class="list">
+            {% for path in outputs.player_files %}
+              <div>{{ path }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px;">
+        <h2>NearSite Files</h2>
+        <div class="list">
+          {% for path in outputs.nearsite_files %}
+            <div>{{ path }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </body>
+</html>

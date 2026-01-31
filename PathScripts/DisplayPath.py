@@ -25,6 +25,17 @@ def _load_paths(
     return payload.get("rounds", {})
 
 
+def _merge_rounds(paths_json_paths: List[str], side: str) -> Dict[str, List[Dict[str, float]]]:
+    merged: Dict[str, List[Dict[str, float]]] = {}
+    counter = 0
+    for path in paths_json_paths:
+        rounds = _load_paths(path, side)
+        for round_id, samples in rounds.items():
+            merged[f"{counter}-{round_id}"] = samples
+            counter += 1
+    return merged
+
+
 # Yield (x, y) points in image space, converting from game coords if needed.
 def _iter_round_points(
     round_data: List[Dict[str, float]],
@@ -385,3 +396,63 @@ def render_paths_overlay(
     output_path = _resolve_output_path(paths_json_path, output_png_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     combined.save(output_path)
+
+
+def render_team_paths_overlay(
+    paths_json_paths: List[str],
+    map_png_path: str,
+    output_png_path: str,
+    map_info: Map | None = None,
+    line_width: int = 3,
+    side: str = "all",
+) -> None:
+    # Load and merge all round samples from multiple players.
+    rounds = _merge_rounds(paths_json_paths, side)
+    if not rounds:
+        raise ValueError("No round data found in the paths JSON files.")
+
+    base_image = Image.open(map_png_path).convert("RGBA")
+    combined = _draw_round_paths(base_image, rounds, map_info, line_width)
+
+    output_path = Path(output_png_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    combined.save(output_path)
+
+
+def render_team_clusters_overlay(
+    paths_json_paths: List[str],
+    map_png_path: str,
+    output_png_path: str,
+    map_info: Map | None = None,
+    side: str = "all",
+    blur_radius: float = 3.0,
+    percentile: float = 90.5,
+    min_cluster_pixels: int = 60,
+) -> None:
+    rounds = _merge_rounds(paths_json_paths, side)
+    if not rounds:
+        raise ValueError("No round data found in the paths JSON files.")
+
+    base = Image.open(map_png_path).convert("RGBA")
+    w, h = base.size
+
+    counts = _build_density_counts(rounds, map_info, w, h)
+    if _max_count(counts) == 0:
+        raise ValueError("No in-bounds points found for clustering.")
+
+    density_l = _counts_to_grayscale_image(counts, w, h)
+    blurred = _blur_density(density_l, blur_radius)
+
+    thr = _threshold_from_percentile(blurred, percentile)
+    mask = _mask_from_threshold(blurred, thr)
+
+    clusters = _connected_components(mask, w, h, min_cluster_pixels=min_cluster_pixels)
+    if not clusters:
+        raise ValueError("No clusters found. Try lowering percentile or min_cluster_pixels.")
+
+    overlay = _render_clusters_overlay(w, h, clusters)
+    out = Image.alpha_composite(base, overlay)
+
+    output_path = Path(output_png_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    out.save(output_path)
