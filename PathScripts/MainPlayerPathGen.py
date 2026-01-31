@@ -29,12 +29,13 @@ def _write_player_paths(
     map_name: str,
     output: Dict[str, Any],
 ) -> Path:
-    # Write the output JSON into Data/<Team>/Players/<Player>/<Player>_<Map>_paths.json.
+    # Write the output JSON into Data/<Team>/Players/<Player>/<Map>/<Player>_<Map>_paths.json.
     safe_team = team_name.replace(" ", "_")
     safe_player = player_name.replace(" ", "_")
-    output_dir = Path("Data") / safe_team / "Players" / safe_player
+    safe_map = map_name.replace(" ", "_")
+    output_dir = Path("Data") / safe_team / "Players" / safe_player / safe_map
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / f"{safe_player}_{map_name}_paths.json"
+    output_path = output_dir / f"{safe_player}_{safe_map}_paths.json"
     with open(output_path, "w", encoding="utf-8") as file_handle:
         json.dump(output, file_handle, indent=2, ensure_ascii=False)
     return output_path
