@@ -211,5 +211,3 @@ def getTeamSeries(teamID:str)->Dict[str,Any]:
     writeToJSON(result, filename)
     return result
 
-if __name__ == "__main__":
-    print(getTeamSeries("97"))

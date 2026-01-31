@@ -9,7 +9,31 @@ import zipfile
 from Player import Player
 from Map import Map
 from AttackDefenseParser import parse_attack_defense_rounds
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional, Dict
 
+@dataclass
+class PlayerRoundState:
+    player_key: str
+    player_all: Player
+    player_attack: Player
+    player_defense: Player
+
+    round_id: int = 0
+    round_in_game: int = 0
+    round_start: Optional[datetime] = None
+
+    game_id: Optional[str] = None
+    player_team_id: Optional[str] = None
+    current_side: Optional[str] = None
+
+
+@dataclass
+class MapState:
+    map_name: str
+    map_obj: Optional[Map]
+    players: Dict[str, PlayerRoundState]
 print("USING PathGenerator:", __file__)
 
 # Normalize GRID timestamps into timezone-aware datetime objects for consistent math.
@@ -369,6 +393,54 @@ def _ensure_map_state(
         }
     return map_states[active_map]
 
+def _extract_player_snapshots(
+    event: Dict[str, Any],
+    wanted: set[str],
+) -> Dict[str, Dict[str, Any]]:
+    out = {}
+
+    candidates = [
+        event.get("seriesState"),
+        event.get("seriesStateDelta"),
+        event.get("actor", {}).get("state"),
+        event.get("actor", {}).get("stateDelta"),
+        event.get("target", {}).get("state"),
+        event.get("target", {}).get("stateDelta"),
+    ]
+
+    for state in candidates:
+        if not state:
+            continue
+
+        for game in state.get("games", []) or []:
+            game_id = game.get("id")
+            map_name = (game.get("map") or {}).get("name")
+
+            for team in game.get("teams", []) or []:
+                team_id = team.get("id")
+
+                for player in team.get("players", []) or []:
+                    pid = str(player.get("id") or "").lower()
+                    pname = (player.get("name") or player.get("nickname") or "").lower()
+
+                    key = pid if pid in wanted else (pname if pname in wanted else None)
+                    if not key:
+                        continue
+
+                    payload = {
+                        "team_id": str(team_id) if team_id else None,
+                        "game_id": str(game_id) if game_id else None,
+                        "map_name": map_name.lower() if map_name else None,
+                    }
+
+                    pos = player.get("position") or {}
+                    if pos.get("x") is not None and pos.get("y") is not None:
+                        payload["gx"] = float(pos["x"])
+                        payload["gy"] = float(pos["y"])
+
+                    out[key] = payload
+
+    return out
 
 def _process_event_for_player(
     event: Dict[str, Any],
@@ -537,25 +609,27 @@ def _dump_seen_maps(
         json.dump(seen_maps, out_handle, indent=2, ensure_ascii=False)
 
 
-def build_player_round_paths(
+def build_team_round_paths_one_pass(
     jsonl_path: str,
-    player_id_or_name: str,
-    map_name: str,
+    player_names_or_ids: list[str],
     seconds_limit: float = 5.0,
+    allowed_maps: Optional[list[str]] = None,
     debug_map_dump: Optional[Path] = None,
 ) -> Dict[str, Any]:
     side_data = parse_attack_defense_rounds(jsonl_path)
-    player_key = player_id_or_name.lower()
-    normalized_filter = map_name.lower()
+
+    wanted = {p.lower() for p in player_names_or_ids}
+    allowed = {m.lower() for m in allowed_maps} if allowed_maps else None
+
     map_states: Dict[str, Dict[str, Any]] = {}
     map_cache: Dict[str, Optional[Map]] = {}
+
     current_map_name: Optional[str] = None
     game_ended = False
     seen_maps: Dict[str, int] = {}
 
     for record in _iter_jsonl_records(jsonl_path):
         for event in _iter_events(record):
-            # Check for end-of-game events so map switching only happens after a game finishes.
             event_type = event.get("type")
             if _should_mark_game_end(event_type):
                 game_ended = True
@@ -567,19 +641,32 @@ def build_player_round_paths(
                 detected_map, current_map_name, game_ended
             )
 
-            # Choose the active map and skip events that do not match the requested map filter.
             active_map = _select_active_map(detected_map, current_map_name)
-            if not _map_matches_filter(active_map, normalized_filter):
+            if not active_map:
                 continue
 
-            # Ensure per-map tracking state exists, then update round/path data for this event.
-            state = _ensure_map_state(
-                active_map,
-                map_states,
-                map_cache,
-                player_id_or_name,
-            )
-            _process_event_for_player(event, state, player_key, seconds_limit, side_data)
+            active_map_l = active_map.lower()
+            if allowed is not None and active_map_l not in allowed:
+                continue
+
+            # 🔑 Extract ALL players in one pass
+            snapshots = _extract_player_snapshots(event, wanted)
+
+            for player_key, ctx in snapshots.items():
+                state = _ensure_map_state(
+                    active_map_l,
+                    map_states,
+                    map_cache,
+                    player_key,
+                )
+
+                _process_event_for_player(
+                    event,
+                    state,
+                    player_key,
+                    seconds_limit,
+                    side_data,
+                )
 
     outputs = _finalize_outputs(map_states, map_cache, seconds_limit)
     _dump_seen_maps(debug_map_dump, seen_maps)

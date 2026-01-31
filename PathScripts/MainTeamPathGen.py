@@ -11,8 +11,9 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from PathScripts.MainPlayerPathGen import generatePlayerPaths
+
 from AttackDefenseParser import parse_attack_defense_rounds
+from PathScripts.PathGenerator import build_team_round_paths_one_pass
 
 
 def _load_team_players(team_name: str) -> Dict[str, str]:
@@ -75,25 +76,27 @@ def generateTeamPaths(
     team_name: str,
     seconds_limit: float = 5.0,
 ) -> None:
-    # Loop each series, then each player, generating paths per map.
     players = _load_team_players(team_name)
+
+    # Iterate each series for this team
     for series_id, end_state_path, jsonl_path in _series_files(team_name):
+        # Decide which maps to generate for this series
         map_names = _maps_from_end_state(end_state_path)
         jsonl_maps = _maps_from_jsonl(jsonl_path)
-        map_names = [name for name in map_names if name in jsonl_maps]
-        for player_name in players.keys():
-            for map_name in map_names:
-                print(
-                    f"Generating paths for team={team_name}, "
-                    f"player={player_name}, map={map_name}, series={series_id}"
-                )
-                generatePlayerPaths(
-                    team_name=team_name,
-                    player_name=player_name,
-                    series_filename=jsonl_path.name,
-                    map_name=map_name,
-                    seconds_limit=seconds_limit,
-                )
+        map_names = [m for m in map_names if m in jsonl_maps]
+
+        print(
+            f"[team paths] team={team_name} series={series_id} "
+            f"players={len(players)} maps={map_names}"
+        )
+
+        # ONE PASS per series (level 3 optimization)
+        build_team_round_paths_one_pass(
+            jsonl_path=str(jsonl_path),
+            player_names_or_ids=list(players.keys()),
+            seconds_limit=seconds_limit,
+            allowed_maps=map_names,
+        )
 
 
 if __name__ == "__main__":

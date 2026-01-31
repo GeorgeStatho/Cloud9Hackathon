@@ -43,7 +43,7 @@ def _write_player_paths(
 
 def generatePlayerPaths(
     team_name: str,
-    player_name: str,
+    player_name: list[str],
     series_filename: str,
     map_name: str,
     seconds_limit: float = 5.0,
