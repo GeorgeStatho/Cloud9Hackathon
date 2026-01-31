@@ -1,7 +1,13 @@
 import argparse
+import sys
 from pathlib import Path
 
-from PathScripts.DisplayPath import render_paths_overlay
+# Allow running as a script from the repo root by ensuring the root is on sys.path.
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from PathScripts.DisplayPath import render_paths_overlay, render_route_clusters_overlay
 from Map import Map
 from PathScripts.PathGenerator import build_player_round_paths
 
@@ -55,6 +61,12 @@ def main() -> None:
         default=None,
         help="Optional JSON output to dump map names seen in the JSONL.",
     )
+    parser.add_argument(
+        "--side",
+        choices=["all", "attack", "defense", "both"],
+        default="all",
+        help="Which side to render (default: all).",
+    )
     args = parser.parse_args()
 
     # Validate the JSONL path early to avoid silent failures later.
@@ -99,20 +111,42 @@ def main() -> None:
 
             map_folder = Path("PlayerData") / safe_player / selected_map
             paths_json = map_folder / f"{safe_player}_paths.json"
-            overlay_png = map_folder / f"{safe_player}_{selected_map}_paths_overlay.png"
-
             if paths_json.exists():
-                # Draw all round paths onto the map image and write a single overlay PNG.
-                render_paths_overlay(
-                    paths_json_path=str(paths_json),
-                    map_png_path=map_info.img_path,
-                    output_png_path=str(overlay_png),
-                    map_info=map_info,
-                )
+                sides = ["attack", "defense"] if args.side == "both" else [args.side]
+                for side in sides:
+                    overlay_png = map_folder / f"{safe_player}_{selected_map}_{side}_paths_overlay.png"
+                    try:
+                        render_paths_overlay(
+                            paths_json_path=str(paths_json),
+                            map_png_path=map_info.img_path,
+                            output_png_path=str(overlay_png),
+                            map_info=map_info,
+                            side=side,
+                        )
+                    except ValueError as exc:
+                        print(f"Skipping {side} overlay: {exc}")
+
+                # ✅ generate ONE cluster image after overlays (runs once)
+                cluster_png = map_folder / f"{safe_player}_{selected_map}_route_clusters.png"
+                print(f"[clusters] writing: {cluster_png}")  # <-- add this line temporarily
+                try:
+                    render_route_clusters_overlay(
+                        paths_json_path=str(paths_json),
+                        map_png_path=map_info.img_path,
+                        output_png_path=str(cluster_png),
+                        map_info=map_info,
+                        side="all",
+                    )
+                except ValueError as exc:
+                    print(f"Skipping route clusters: {exc}")
 
             # Print the file names for quick CLI feedback.
             print(f"Paths JSON: {paths_json}")
-            print(f"Overlay PNG: {overlay_png}")
+            if args.side == "both":
+                print(f"Overlay PNG: {map_folder / f'{safe_player}_{selected_map}_attack_paths_overlay.png'}")
+                print(f"Overlay PNG: {map_folder / f'{safe_player}_{selected_map}_defense_paths_overlay.png'}")
+            else:
+                print(f"Overlay PNG: {map_folder / f'{safe_player}_{selected_map}_{args.side}_paths_overlay.png'}")
 
 
 if __name__ == "__main__":

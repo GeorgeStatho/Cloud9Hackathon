@@ -16,7 +16,7 @@ transport = RequestsHTTPTransport(
 
 client = Client(transport=transport, fetch_schema_from_transport=True)
 
-def getTeamMapData(teamID:str):
+def getTeamSeriesData(teamID:str):
     query= gql("""query GetKillsPerSeriesSegment($teamID: ID!) {
                 seriesState(id:$teamID) {
                     valid
@@ -63,4 +63,4 @@ def getTeamMapData(teamID:str):
     writeToJSON(stats_result, filename)
     return stats_result
 
-getTeamMapData("5")
+getTeamSeriesData("5")
