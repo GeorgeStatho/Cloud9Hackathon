@@ -35,6 +35,6 @@ def generateTeamSeriesFiles(teamName: str, max_files: int | None = None):
                         download_file(entry["fullURL"], file_name, output_path=output_path)
                         downloaded += 1
 
-
+generateTeamSeriesFiles("NRG", 30)
         
                 
