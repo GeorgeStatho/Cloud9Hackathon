@@ -92,39 +92,22 @@
     <div class="wrap">
       <div class="panel">
         <h1>Team Pipeline Runner</h1>
-        <form method="post">
+        <form id="pipelineForm">
           <label for="api_key">API Key</label>
           <input id="api_key" name="api_key" value="{{ api_key }}" placeholder="GRID API key" />
           <label for="team_name">Team Name</label>
           <input id="team_name" name="team_name" value="{{ team_name }}" placeholder="e.g. NRG" />
           <label for="seconds_limit">Seconds Limit (path generation)</label>
-          <input id="seconds_limit" name="seconds_limit" value="{{ seconds_limit }}" />
+          <input id="seconds_limit" name="seconds_limit" value="{{ seconds_limit }}" type="number" step="1" min="1" />
           <label for="time_threshold">Time Threshold (NearSite)</label>
-          <input id="time_threshold" name="time_threshold" value="{{ time_threshold }}" />
-          <button type="submit">Run Pipeline</button>
-        </form>
-        <form method="post" style="margin-top:12px;">
-          <input type="hidden" name="team_name" value="{{ team_name }}" />
-          <input type="hidden" name="seconds_limit" value="{{ seconds_limit }}" />
-          <input type="hidden" name="time_threshold" value="{{ time_threshold }}" />
-          <input type="hidden" name="action" value="update_paths" />
-          <button type="submit">Update Paths + NearSite Only</button>
+          <input id="time_threshold" name="time_threshold" value="{{ time_threshold }}" type="number" step="1" min="1" />
+          <div id="runLog" class="list log" style="display:none; margin-top:12px;"></div>
+          <button type="submit" id="runBtn" style="display:none;">Run Pipeline</button>
         </form>
         {% if error %}
           <div class="error">{{ error }}</div>
         {% endif %}
       </div>
-
-      {% if logs %}
-      <div class="panel" style="margin-top:16px;">
-        <h2>Logs</h2>
-        <div class="list log">
-          {% for line in logs %}
-            {{ line }}{% if not loop.last %}\n{% endif %}
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
 
       {% if outputs %}
       <div class="grid">
@@ -155,5 +138,76 @@
       </div>
       {% endif %}
     </div>
+    <script>
+      const apiKeyInput = document.getElementById("api_key");
+      const teamInput = document.getElementById("team_name");
+      const secondsInput = document.getElementById("seconds_limit");
+      const timeInput = document.getElementById("time_threshold");
+      const runBtn = document.getElementById("runBtn");
+
+      const runLog = document.getElementById("runLog");
+      const form = document.getElementById("pipelineForm");
+
+      function toggleRun() {
+        const ok =
+          apiKeyInput.value.trim() &&
+          teamInput.value.trim() &&
+          secondsInput.value.trim() &&
+          timeInput.value.trim();
+        runBtn.style.display = ok ? "inline-block" : "none";
+      }
+
+      [apiKeyInput, teamInput, secondsInput, timeInput].forEach((el) =>
+        el.addEventListener("input", toggleRun)
+      );
+      toggleRun();
+
+      async function startPipeline() {
+        runBtn.style.display = "none";
+        runLog.style.display = "block";
+        runLog.textContent = "Starting main.py...\n";
+
+        const payload = {
+          api_key: apiKeyInput.value.trim(),
+          team_name: teamInput.value.trim(),
+          seconds_limit: Number(secondsInput.value),
+          time_threshold: Number(timeInput.value),
+        };
+
+        const resp = await fetch("/api/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          runLog.textContent += `Error: ${err.error || resp.statusText}\n`;
+          runBtn.style.display = "inline-block";
+          return;
+        }
+
+        const evt = new EventSource("/api/stream");
+        evt.onmessage = (e) => {
+          if (e.data === "__PIPELINE_DONE__") {
+            evt.close();
+            runLog.textContent += "Done.\n";
+            runBtn.style.display = "inline-block";
+            const team = encodeURIComponent(teamInput.value.trim());
+            if (team) {
+              window.location.href = `/results/${team}`;
+            }
+            return;
+          }
+          runLog.textContent += `${e.data}\n`;
+          runLog.scrollTop = runLog.scrollHeight;
+        };
+      }
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        startPipeline();
+      });
+    </script>
   </body>
 </html>

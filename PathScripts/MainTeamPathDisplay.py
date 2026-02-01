@@ -11,7 +11,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from PathScripts.MainPlayerPathDisplay import render_player_paths, _infer_map_name
 from PathScripts.DisplayPath import render_team_paths_overlay, render_team_clusters_overlay
-from Map import Map
+from PositionalObjects.Map import Map
 
 
 def _player_paths(team_name: str) -> Iterable[Path]:

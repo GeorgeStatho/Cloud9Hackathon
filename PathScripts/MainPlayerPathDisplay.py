@@ -9,7 +9,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from Map import Map
+from PositionalObjects.Map import Map
 from PathScripts.DisplayPath import render_paths_overlay
 
 
@@ -18,7 +18,8 @@ def _infer_map_name(paths_json_path: Path) -> str:
     stem = paths_json_path.stem
     parts = stem.split("_")
     if len(parts) < 3:
-        raise ValueError(f"Cannot infer map name from filename: {paths_json_path.name}")
+        # Fall back to the parent folder name when filename lacks map info.
+        return paths_json_path.parent.name
     return parts[-2]
 
 

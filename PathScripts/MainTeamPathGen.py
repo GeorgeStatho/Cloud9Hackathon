@@ -96,6 +96,7 @@ def generateTeamPaths(
             player_names_or_ids=list(players.keys()),
             seconds_limit=seconds_limit,
             allowed_maps=map_names,
+            output_root=Path("Data") / team_name.replace(" ", "_") / "Players",
         )
 
 

@@ -1,6 +1,6 @@
-from BasicFunctionalities import *
+from GraphQlScripts.BasicFunctionalities import *
 
-from Keys import API_KEY
+from GraphQlScripts.Keys import API_KEY
 
 import os
 import time
@@ -42,7 +42,7 @@ def download_series_files(series_id: str):
     response = _request_with_backoff(url, timeout=30, max_retries=6)
     response.raise_for_status()
     return response.json()
-print(download_series_files("2629390"))
+
 
 def download_file(full_url: str, output_filename: str, output_path: str | None = None):
     if output_path is None:

@@ -1,6 +1,8 @@
-from BasicFunctionalities import *
+from GraphQlScripts.BasicFunctionalities import *
 
-from Keys import API_KEY
+
+
+from GraphQlScripts.Keys import API_KEY
 API_URL = "https://api-op.grid.gg/central-data/graphql"
 STATS_URL="https://api-op.grid.gg/stats-feed/graphql"
 GAME_ID = "6" #Valorant game ID. Don't want LOL Data

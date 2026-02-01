@@ -13,18 +13,38 @@ if str(ROOT_DIR) not in sys.path:
 
 
 def _load_player_paths(team_name: str, player_name: str, map_name: str) -> Dict[str, Any]:
-    # Read Data/<Team>/Players/<Player>/<Map>/<Player>_<Map>_paths.json
+    # Read Data/<Team>/Players/<Player>/<Map>/<Player>_<Map>_paths.json.
+    # Resolve player/map directories case-insensitively so lowercase folders work.
     safe_team = team_name.replace(" ", "_")
     safe_player = player_name.replace(" ", "_")
     safe_map = map_name.replace(" ", "_")
-    paths_path = (
-        Path("Data")
-        / safe_team
-        / "Players"
-        / safe_player
-        / safe_map
-        / f"{safe_player}_{safe_map}_paths.json"
-    )
+
+    players_root = Path("Data") / safe_team / "Players"
+    if not players_root.exists():
+        raise FileNotFoundError(f"Team players folder not found: {players_root}")
+
+    player_dir = None
+    for entry in players_root.iterdir():
+        if entry.is_dir() and entry.name.lower() == safe_player.lower():
+            player_dir = entry
+            break
+    if player_dir is None:
+        player_dir = players_root / safe_player
+
+    map_dir = None
+    if player_dir.exists():
+        for entry in player_dir.iterdir():
+            if entry.is_dir() and entry.name.lower() == safe_map.lower():
+                map_dir = entry
+                break
+    if map_dir is None:
+        map_dir = player_dir / safe_map
+
+    paths_path = map_dir / f"{safe_player}_{safe_map}_paths.json"
+    if not paths_path.exists():
+        fallback_path = map_dir / f"{safe_player}_paths.json"
+        if fallback_path.exists():
+            paths_path = fallback_path
     if not paths_path.exists():
         raise FileNotFoundError(f"Paths JSON not found: {paths_path}")
     with open(paths_path, "r", encoding="utf-8") as file_handle:

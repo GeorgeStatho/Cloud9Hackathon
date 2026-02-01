@@ -26,7 +26,8 @@ def _infer_map_name(paths_json_path: Path) -> str:
     stem = paths_json_path.stem
     parts = stem.split("_")
     if len(parts) < 3:
-        raise ValueError(f"Cannot infer map name from filename: {paths_json_path.name}")
+        # Fall back to parent folder when filename doesn't include map info.
+        return paths_json_path.parent.name
     return parts[-2]
 
 

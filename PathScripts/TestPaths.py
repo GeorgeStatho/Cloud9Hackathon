@@ -8,7 +8,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from PathScripts.DisplayPath import render_paths_overlay, render_route_clusters_overlay
-from Map import Map
+from PositionalObjects.Map import Map
 from PathScripts.PathGenerator import build_player_round_paths
 
 
