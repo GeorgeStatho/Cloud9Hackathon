@@ -1,4 +1,5 @@
 from GraphQlScripts.BasicFunctionalities import *
+import datetime
 
 
 
@@ -191,25 +192,72 @@ def getPlayerInfo(player_id: str) -> Dict[str, Any]:
     writeToJSON(result, filename)
     return result
 
-def getTeamSeries(teamID:str)->Dict[str,Any]:
+def getTeamSeries(teamID: str) -> Dict[str, Any]:
+    now_utc = datetime.datetime.utcnow()
+    current_day = now_utc.replace(microsecond=0).isoformat() + "Z"
+    one_year_ago = (now_utc - datetime.timedelta(days=365)).replace(microsecond=0).isoformat() + "Z"
     query = gql(
         """
-        query Series($teamID: ID!) {
-          allSeries(filter: { teamIds: { in: [$teamID] } }) {
-           totalCount
-           edges {
-               node {
-                   id
-                   }
-               }
+        query Series($teamID: ID!, $after: String, $currentDay: String!, $oneYearAgo: String!) {
+          allSeries(
+            filter: {
+              teamIds: { in: [$teamID] }
+              startTimeScheduled: { gte: $oneYearAgo, lte: $currentDay }
+            }
+            first: 50
+            after: $after
+          ) {
+            totalCount
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+            edges {
+              node {
+                id
               }
-            }"""
+            }
+          }
+        }
+        """
     )
-    result = client.execute(query, variable_values={"teamID": teamID})
-    series = result.get("allSeries")
-    if not series:
-        raise ValueError(f"No series found for team ID '{teamID}'.")
+    all_edges: list = []
+    total_count: int | None = None
+    has_next = True
+    cursor = None
+    while has_next:
+        result = client.execute(
+            query,
+            variable_values={
+                "teamID": teamID,
+                "after": cursor,
+                "currentDay": current_day,
+                "oneYearAgo": one_year_ago,
+            },
+        )
+        series = result.get("allSeries")
+        if not series:
+            raise ValueError(f"No series found for team ID '{teamID}'.")
+        if total_count is None:
+            total_count = series.get("totalCount")
+        page_info = series.get("pageInfo", {}) or {}
+        all_edges.extend(series.get("edges", []) or [])
+        has_next = bool(page_info.get("hasNextPage"))
+        cursor = page_info.get("endCursor")
+        if not cursor and has_next:
+            break
+
+    merged = {
+        "allSeries": {
+            "totalCount": total_count if total_count is not None else len(all_edges),
+            "pageInfo": {
+                "endCursor": cursor,
+                "hasNextPage": has_next,
+            },
+            "edges": all_edges,
+        }
+    }
     filename = f"{teamID}_series.json".replace(" ", "_")
-    writeToJSON(result, filename)
-    return result
+    writeToJSON(merged, filename)
+    return merged
 

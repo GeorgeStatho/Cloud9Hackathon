@@ -26,9 +26,24 @@ def generateTeamSeriesFiles(teamName: str, max_files: int | None = None):
         teamId = getTeamId(teamName)
         teamSeries = getTeamSeries(teamId)
         base_dir = os.path.join("Data", teamName, "series")
+        os.makedirs(base_dir, exist_ok=True)
         downloaded = 0
         for series in teamSeries["allSeries"]["edges"]:
-                series_files = download_series_files(series["node"]["id"]).get("files", [])
+                series_id = series["node"]["id"]
+                expected_zip = os.path.join(base_dir, f"events_{series_id}_grid.jsonl.zip")
+                expected_jsonl = os.path.join(base_dir, f"events_{series_id}_grid.jsonl")
+                expected_alt_zip = os.path.join(base_dir, f"event_{series_id}_grid.json.sip")
+                expected_end_state = os.path.join(base_dir, f"end_state_{series_id}_grid.json")
+                has_series_zip = (
+                        os.path.exists(expected_zip)
+                        or os.path.exists(expected_jsonl)
+                        or os.path.exists(expected_alt_zip)
+                )
+                has_end_state = os.path.exists(expected_end_state)
+                if has_series_zip and has_end_state:
+                        continue
+
+                series_files = download_series_files(series_id).get("files", [])
                 for entry in series_files:
                         if max_files is not None and downloaded >= max_files:
                                 return

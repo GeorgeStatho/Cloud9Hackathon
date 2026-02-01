@@ -20,10 +20,22 @@ os.makedirs(SERIES_DATA_DIR, exist_ok=True)
 
 
 
-def _request_with_backoff(url: str, stream: bool = False, timeout: int = 30, max_retries: int = 5):
+def _request_with_backoff(
+    url: str,
+    stream: bool = False,
+    timeout: int = 30,
+    max_retries: int = 5,
+    delay_between_calls: float = 3.0,
+):
     delay = 2
     for attempt in range(max_retries):
-        response = requests.get(url, headers=headers, stream=stream, timeout=timeout)
+        time.sleep(delay_between_calls)
+        try:
+            response = requests.get(url, headers=headers, stream=stream, timeout=timeout)
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError):
+            time.sleep(delay)
+            delay = min(delay * 2, 30)
+            continue
         if response.status_code != 429:
             return response
         retry_after = response.headers.get("Retry-After")

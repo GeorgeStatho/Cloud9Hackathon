@@ -89,6 +89,14 @@ def _event_player_id(event: dict, key: str) -> Optional[str]:
     return None
 
 
+def _map_from_record(reader: JsonlEventReader, record: dict) -> Optional[str]:
+    for event in reader.iter_events(record):
+        detected_map = reader.find_map_name(event)
+        if detected_map:
+            return detected_map
+    return None
+
+
 def compute_team_player_event_stats(team_name: str) -> Dict[str, Dict[str, Dict[str, List[float] | int | float]]]:
     """
     Returns {player_id: {map_name: stats}} where stats include:
@@ -102,13 +110,21 @@ def compute_team_player_event_stats(team_name: str) -> Dict[str, Dict[str, Dict[
     stats: Dict[str, Dict[str, Dict[str, List[float] | int | float]]] = {}
     for jsonl_path in _series_jsonl_files(team_name):
         reader = JsonlEventReader(str(jsonl_path))
+        current_map: Optional[str] = None
         for record in reader.iter_records():
+            record_map = _map_from_record(reader, record)
+            if record_map:
+                current_map = record_map
             for event in reader.iter_events(record):
+                detected_map = reader.find_map_name(event)
+                if detected_map:
+                    current_map = detected_map
+
                 event_type = event.get("type")
                 if event_type not in (KILL_EVENT_TYPES | DEATH_EVENT_TYPES | PLANT_EVENT_TYPES | DEFUSE_EVENT_TYPES):
                     continue
 
-                map_name = reader.find_map_name(event)
+                map_name = detected_map or current_map
                 if not map_name:
                     continue
                 map_key = map_name.lower()
@@ -188,3 +204,50 @@ def compute_team_player_event_stats(team_name: str) -> Dict[str, Dict[str, Dict[
                     entry["defuse_count"] += 1
 
     return stats
+
+
+def debug_player_kills(team_name: str, player_id: str, max_events: int = 5) -> None:
+    """
+    Print a small sample of kill events for the given player_id so we can verify matching.
+    """
+    seen = 0
+    total = 0
+    for jsonl_path in _series_jsonl_files(team_name):
+        reader = JsonlEventReader(str(jsonl_path))
+        current_map: Optional[str] = None
+        for record in reader.iter_records():
+            record_map = _map_from_record(reader, record)
+            if record_map:
+                current_map = record_map
+            for event in reader.iter_events(record):
+                detected_map = reader.find_map_name(event)
+                if detected_map:
+                    current_map = detected_map
+                if event.get("type") not in KILL_EVENT_TYPES:
+                    continue
+                killer_id = _event_player_id(event, "actor")
+                if not killer_id or str(killer_id) != str(player_id):
+                    continue
+                total += 1
+                map_name = detected_map or current_map
+                killer = reader.find_player_snapshot(event, str(killer_id))
+                victim_id = _event_player_id(event, "target")
+                victim = reader.find_player_snapshot(event, str(victim_id)) if victim_id else None
+                print(
+                    {
+                        "map": map_name,
+                        "killer_id": killer_id,
+                        "victim_id": victim_id,
+                        "killer_pos": (killer or {}).get("gx"),
+                        "victim_pos": (victim or {}).get("gx"),
+                        "occurredAt": event.get("occurredAt"),
+                    }
+                )
+                seen += 1
+                if seen >= max_events:
+                    break
+            if seen >= max_events:
+                break
+        if seen >= max_events:
+            break
+    print(f"total kill events matched for player {player_id}: {total}")
