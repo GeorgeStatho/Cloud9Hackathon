@@ -150,10 +150,12 @@ def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]
     stats_attack["spike_rate_attack"] = _spike_rate_attack(attack_rounds)
 
     nearsite_path = paths_path.with_name(f"{paths_path.stem}_all_nearsite.json")
+    nearsite_rel = None
     sig_all = {"zone": None, "percent": None}
     sig_attack = {"zone": None, "percent": None}
     sig_defense = {"zone": None, "percent": None}
     if nearsite_path.exists():
+        nearsite_rel = str(nearsite_path.relative_to(ROOT_DIR)).replace("\\", "/")
         with open(nearsite_path, "r", encoding="utf-8") as file_handle:
             nearsite = json.load(file_handle)
         sig_all = _signature_from_nearsite(nearsite, "percentages")
@@ -175,6 +177,7 @@ def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]
         "signature_zone_defense": sig_defense,
         "paths_rel": str(paths_path.relative_to(ROOT_DIR)).replace("\\", "/"),
         "map_image_rel": _map_image_rel(map_name),
+        "nearsite_rel": nearsite_rel,
         "player_stats": player_stats,
     }
 

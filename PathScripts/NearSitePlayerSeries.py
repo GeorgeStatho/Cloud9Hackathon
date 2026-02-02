@@ -46,6 +46,7 @@ def generate_player_nearsite_series(
             map_name=map_name,
             time_seconds=time_seconds,
             side=side,
+            include_signature_cache=(side == "all"),
         )
         output_path = paths_json.with_name(
             f"{paths_json.stem}_{side}_nearsite.json"

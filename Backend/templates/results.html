@@ -175,6 +175,7 @@
           data-map-panel="{{ map_name }}"
           data-map-name="{{ map_name }}"
           data-paths-rel="{{ summary.paths_rel }}"
+          data-nearsite-rel="{{ summary.nearsite_rel or '' }}"
           data-map-image-rel="{{ summary.map_image_rel }}"
           style="display:none;"
         >
@@ -454,7 +455,11 @@
         return best;
       }
 
-      function signatureZoneForTime(payload, callouts, t, scope) {
+      function signatureZoneForTime(payload, callouts, t, scope, signatureCache) {
+        if (signatureCache && signatureCache[scope]) {
+          const bucket = signatureCache[scope][String(Math.round(t))] || [];
+          return { top: bucket.slice(0, 3) };
+        }
         const rounds =
           scope === "attack"
             ? payload.attack_rounds || {}
@@ -500,16 +505,19 @@
       async function attachSignatureSliders(panel) {
         const mapName = panel.dataset.mapName;
         const pathsRel = panel.dataset.pathsRel;
+        const nearsiteRel = panel.dataset.nearsiteRel;
         const mapImageRel = panel.dataset.mapImageRel;
         if (!mapName || !pathsRel) return;
 
-        const [pathsPayload, mapPayload] = await Promise.all([
+        const [pathsPayload, mapPayload, nearsitePayload] = await Promise.all([
           fetchJson(`/api/file?path=${encodeURIComponent(pathsRel)}`),
           fetchJson(`/api/map/${encodeURIComponent(mapName)}`),
+          nearsiteRel ? fetchJson(`/api/file?path=${encodeURIComponent(nearsiteRel)}`) : Promise.resolve(null),
         ]);
 
         if (!pathsPayload || !mapPayload) return;
         const callouts = mapPayload.callouts || [];
+        const signatureCache = (nearsitePayload || {}).signature_cache || null;
 
         let mapImage = null;
         if (mapImageRel) {
@@ -536,7 +544,7 @@
           const update = () => {
             const t = Number(slider.value);
             if (timeEl) timeEl.textContent = `t=${t}s`;
-            const sig = signatureZoneForTime(pathsPayload, callouts, t, scope);
+            const sig = signatureZoneForTime(pathsPayload, callouts, t, scope, signatureCache);
             const top = sig.top || [];
             zoneEls.forEach((el, idx) => {
               const entry = top[idx];
