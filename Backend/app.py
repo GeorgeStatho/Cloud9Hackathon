@@ -100,12 +100,13 @@ def _signature_from_nearsite(payload: Dict[str, Any], key: str) -> Dict[str, Any
 
 
 def _rounds_stats(rounds: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
-    rounds_count = len(rounds)
+    rounds_count = 0
     net_worths: List[float] = []
     loadouts: List[float] = []
     for samples in rounds.values():
         if not samples:
             continue
+        rounds_count += 1
         sample = samples[0]
         if sample.get("netWorth") is not None:
             net_worths.append(float(sample["netWorth"]))
@@ -118,6 +119,16 @@ def _rounds_stats(rounds: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
         "avg_net_worth": avg_net,
         "avg_loadout_value": avg_loadout,
     }
+
+
+def _round_count_from_round_shots(round_shots: Dict[str, Any], side: Optional[str] = None) -> int:
+    count = 0
+    for rounds in round_shots.values():
+        for payload in (rounds or {}).values():
+            if side and payload.get("side") != side:
+                continue
+            count += 1
+    return count
 
 
 def _spike_rate_attack(attack_rounds: Dict[str, List[Dict[str, Any]]]) -> Optional[float]:
@@ -199,6 +210,11 @@ def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]
 
     attack_round_shots = _filter_round_shots_by_side(round_shots, "attack")
     defense_round_shots = _filter_round_shots_by_side(round_shots, "defense")
+
+    # Use player statistics round data (not path samples) for round counts.
+    stats_overall["rounds"] = _round_count_from_round_shots(round_shots)
+    stats_attack["rounds"] = _round_count_from_round_shots(round_shots, side="attack")
+    stats_defense["rounds"] = _round_count_from_round_shots(round_shots, side="defense")
 
     attack_headshots, attack_bodyshots = _shot_totals_from_round_shots(attack_round_shots)
     attack_shot_total = attack_headshots + attack_bodyshots
@@ -337,6 +353,7 @@ def _aggregate_player_overall(maps: Dict[str, Any]) -> Dict[str, Any]:
     headshots = 0
     bodyshots = 0
     total_games = 0
+    teammate_distance_weighted: List[Tuple[float, float]] = []
 
     for map_summary in maps.values():
         player_stats = map_summary.get("player_stats", {}) or {}
@@ -356,6 +373,12 @@ def _aggregate_player_overall(maps: Dict[str, Any]) -> Dict[str, Any]:
         for weapon, count in _weapon_counts_from_round_shots(round_shots).items():
             weapon_counts[weapon] = weapon_counts.get(weapon, 0) + count
 
+        avg_team_dist = (player_stats.get("avg_teammate_distance") or {}).get("overall")
+        if avg_team_dist is not None:
+            rounds = map_summary.get("overall", {}).get("rounds") or 0
+            weight = float(rounds) if rounds else 1.0
+            teammate_distance_weighted.append((float(avg_team_dist), weight))
+
     avg_kill_distance = (
         round(sum(kill_distances) / len(kill_distances), 2) if kill_distances else None
     )
@@ -366,6 +389,12 @@ def _aggregate_player_overall(maps: Dict[str, Any]) -> Dict[str, Any]:
     )
     shot_total = headshots + bodyshots
     headshot_rate = round((headshots / shot_total) * 100.0, 2) if shot_total else None
+    if teammate_distance_weighted:
+        weighted_sum = sum(value * weight for value, weight in teammate_distance_weighted)
+        total_weight = sum(weight for _, weight in teammate_distance_weighted)
+        avg_teammate_distance = round(weighted_sum / total_weight, 2) if total_weight else None
+    else:
+        avg_teammate_distance = None
 
     return {
         "total_kills": total_kills,
@@ -373,9 +402,73 @@ def _aggregate_player_overall(maps: Dict[str, Any]) -> Dict[str, Any]:
         "kd_ratio": kd_ratio,
         "headshot_rate": headshot_rate,
         "avg_kill_distance": avg_kill_distance,
+        "avg_teammate_distance": avg_teammate_distance,
         "top_agents": _top_n_with_percent(agent_counts, 3),
         "top_weapons": _top_n_with_percent(weapon_counts, 3),
         "total_games": total_games,
+    }
+
+
+def _aggregate_player_side_overall(maps: Dict[str, Any], side: str) -> Dict[str, Any]:
+    rounds_total = 0
+    net_total = 0.0
+    loadout_total = 0.0
+    net_weight = 0
+    loadout_weight = 0
+    headshot_weighted: List[Tuple[float, float]] = []
+    teammate_weighted: List[Tuple[float, float]] = []
+
+    for map_summary in maps.values():
+        side_summary = map_summary.get(side, {}) or {}
+        rounds = int(side_summary.get("rounds", 0) or 0)
+        if rounds <= 0:
+            continue
+        rounds_total += rounds
+
+        avg_net = side_summary.get("avg_net_worth")
+        if avg_net is not None:
+            net_total += float(avg_net) * rounds
+            net_weight += rounds
+        avg_loadout = side_summary.get("avg_loadout_value")
+        if avg_loadout is not None:
+            loadout_total += float(avg_loadout) * rounds
+            loadout_weight += rounds
+
+        headshot_rate = None
+        if side == "attack":
+            headshot_rate = (map_summary.get("map_stats_attack") or {}).get("headshot_rate")
+        elif side == "defense":
+            headshot_rate = (map_summary.get("map_stats_defense") or {}).get("headshot_rate")
+        if headshot_rate is not None:
+            headshot_weighted.append((float(headshot_rate), rounds))
+
+        avg_team_dist = (map_summary.get("player_stats") or {}).get(
+            "avg_teammate_distance", {}
+        ).get(side)
+        if avg_team_dist is not None:
+            teammate_weighted.append((float(avg_team_dist), rounds))
+
+    avg_net = round(net_total / net_weight, 2) if net_weight else None
+    avg_loadout = round(loadout_total / loadout_weight, 2) if loadout_weight else None
+    if headshot_weighted:
+        weighted_sum = sum(value * weight for value, weight in headshot_weighted)
+        total_weight = sum(weight for _, weight in headshot_weighted)
+        headshot_rate = round(weighted_sum / total_weight, 2) if total_weight else None
+    else:
+        headshot_rate = None
+    if teammate_weighted:
+        weighted_sum = sum(value * weight for value, weight in teammate_weighted)
+        total_weight = sum(weight for _, weight in teammate_weighted)
+        avg_teammate_distance = round(weighted_sum / total_weight, 2) if total_weight else None
+    else:
+        avg_teammate_distance = None
+
+    return {
+        "rounds": rounds_total,
+        "avg_net_worth": avg_net,
+        "avg_loadout_value": avg_loadout,
+        "headshot_rate": headshot_rate,
+        "avg_teammate_distance": avg_teammate_distance,
     }
 
 
@@ -410,6 +503,52 @@ def _collect_player_map_stats(team_name: str) -> Dict[str, Dict[str, Any]]:
             results.pop(player_name, None)
 
     return results
+
+
+def _collect_team_map_stats(stats: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    team_overall: List[Dict[str, Any]] = []
+    map_names: List[str] = []
+    maps: Dict[str, Dict[str, Any]] = {}
+
+    for player_name, player_maps in stats.items():
+        overall = player_maps.get("__overall__", {}).get("overall_player")
+        if overall:
+            team_overall.append(
+                {
+                    "name": player_name,
+                    "overall": overall,
+                    "attack": _aggregate_player_side_overall(player_maps, "attack"),
+                    "defense": _aggregate_player_side_overall(player_maps, "defense"),
+                }
+            )
+
+        for map_name, summary in player_maps.items():
+            if map_name == "__overall__":
+                continue
+            if map_name not in maps:
+                maps[map_name] = {
+                    "map_name": map_name,
+                    "map_image_rel": summary.get("map_image_rel"),
+                    "players": [],
+                    "paths": [],
+                }
+                map_names.append(map_name)
+            maps[map_name]["players"].append({"name": player_name, "summary": summary})
+            maps[map_name]["paths"].append(
+                {"name": player_name, "paths_rel": summary.get("paths_rel")}
+            )
+
+    map_names.sort()
+    team_overall.sort(key=lambda item: item["name"].lower())
+    for map_name in map_names:
+        maps[map_name]["players"].sort(key=lambda item: item["name"].lower())
+        maps[map_name]["paths"].sort(key=lambda item: item["name"].lower())
+
+    return {
+        "overall": team_overall,
+        "map_names": map_names,
+        "maps": maps,
+    }
 
 
 def _enqueue(line: str) -> None:
@@ -568,7 +707,13 @@ def serve_file(relpath: str):
 @app.route("/results/<team_name>", methods=["GET"])
 def results(team_name: str):
     stats = _collect_player_map_stats(team_name)
-    return render_template("results.html", team_name=team_name, stats=stats)
+    team_stats = _collect_team_map_stats(stats)
+    return render_template(
+        "results.html",
+        team_name=team_name,
+        stats=stats,
+        team_stats=team_stats,
+    )
 
 
 if __name__ == "__main__":

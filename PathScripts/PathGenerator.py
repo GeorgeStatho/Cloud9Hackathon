@@ -66,12 +66,14 @@ def _build_output(
     map_info: Optional[Map],
     seconds_limit: float,
     map_name: Optional[str],
+    round_game_ids: Optional[Dict[int, str]] = None,
 ) -> Dict[str, Any]:
     output: Dict[str, Any] = {
         "player": player.name,
         "seconds_limit": seconds_limit,
         "map": map_name,
         "rounds": {},
+        "game_rounds": {},
     }
 
     for rid, path in player.paths.items():
@@ -90,6 +92,10 @@ def _build_output(
                 entry["iy"] = iy
             samples.append(entry)
         output["rounds"][str(rid)] = samples
+        if round_game_ids is not None:
+            game_id = round_game_ids.get(rid)
+            if game_id:
+                output["game_rounds"].setdefault(str(game_id), {})[str(rid)] = samples
 
     return output
 
@@ -193,6 +199,9 @@ def _process_event_for_player(
             state.round_in_game,
             state.player_team_id,
         )
+        if state.game_id:
+            state.round_game_id_by_round[state.round_id] = state.game_id
+            state.round_in_game_by_round[state.round_id] = state.round_in_game
 
     if state.round_start is None:
         return
@@ -292,13 +301,26 @@ def _finalize_outputs(
                 map_obj,
                 seconds_limit,
                 map_name,
+                round_game_ids=player_state.round_game_id_by_round,
             )
-            output["attack_rounds"] = _build_output(
-                player_state.player_attack, map_obj, seconds_limit, map_name
-            )["rounds"]
-            output["defense_rounds"] = _build_output(
-                player_state.player_defense, map_obj, seconds_limit, map_name
-            )["rounds"]
+            attack_output = _build_output(
+                player_state.player_attack,
+                map_obj,
+                seconds_limit,
+                map_name,
+                round_game_ids=player_state.round_game_id_by_round,
+            )
+            defense_output = _build_output(
+                player_state.player_defense,
+                map_obj,
+                seconds_limit,
+                map_name,
+                round_game_ids=player_state.round_game_id_by_round,
+            )
+            output["attack_rounds"] = attack_output["rounds"]
+            output["defense_rounds"] = defense_output["rounds"]
+            output["attack_game_rounds"] = attack_output["game_rounds"]
+            output["defense_game_rounds"] = defense_output["game_rounds"]
             outputs[map_name][player_state.player_all.name] = output
 
             filename = f"{player_state.player_all.name}_paths.json"

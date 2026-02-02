@@ -21,10 +21,29 @@ def _load_paths(
     with open(paths_json_path, "r", encoding="utf-8") as file_handle:
         payload = json.load(file_handle)
     if side == "attack":
+        game_rounds = payload.get("attack_game_rounds")
+        if game_rounds:
+            return _flatten_game_rounds(game_rounds)
         return payload.get("attack_rounds", {})
     if side == "defense":
+        game_rounds = payload.get("defense_game_rounds")
+        if game_rounds:
+            return _flatten_game_rounds(game_rounds)
         return payload.get("defense_rounds", {})
+    game_rounds = payload.get("game_rounds")
+    if game_rounds:
+        return _flatten_game_rounds(game_rounds)
     return payload.get("rounds", {})
+
+
+def _flatten_game_rounds(
+    game_rounds: Dict[str, Dict[str, List[Dict[str, float]]]],
+) -> Dict[str, List[Dict[str, float]]]:
+    merged: Dict[str, List[Dict[str, float]]] = {}
+    for game_id, rounds in (game_rounds or {}).items():
+        for round_id, samples in (rounds or {}).items():
+            merged[f"{game_id}-{round_id}"] = samples
+    return merged
 
 
 def _load_paths_as_objects(

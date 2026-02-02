@@ -164,6 +164,10 @@
               <div class="muted">Avg kill distance</div>
               <div>{{ overall.avg_kill_distance if overall.avg_kill_distance is not none else "N/A" }}</div>
             </div>
+            <div class="card">
+              <div class="muted">Avg teammate distance</div>
+              <div>{{ overall.avg_teammate_distance if overall.avg_teammate_distance is not none else "N/A" }}</div>
+            </div>
           </div>
           <div class="card" style="margin-top:16px;">
             <h4>Per-map stats</h4>
@@ -174,6 +178,15 @@
                   <div class="muted">{{ map_name }}</div>
                   <div>K/D: {{ summary.map_stats.kd_ratio if summary.map_stats.kd_ratio is not none else "N/A" }}</div>
                   <div>Headshot rate: {{ summary.map_stats.headshot_rate if summary.map_stats.headshot_rate is not none else "N/A" }}%</div>
+                  <div>Rounds (Atk/Def): {{ summary.attack.rounds }}/{{ summary.defense.rounds }}</div>
+                  <div>
+                    Avg teammate distance:
+                    {% if summary.player_stats.avg_teammate_distance %}
+                      {{ summary.player_stats.avg_teammate_distance.overall if summary.player_stats.avg_teammate_distance.overall is not none else "N/A" }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </div>
                   <div class="muted" style="margin-top:6px;">Top weapons</div>
                   {% if summary.map_stats.top_weapons %}
                     {% for entry in summary.map_stats.top_weapons %}
@@ -272,6 +285,14 @@
                 <div>{{ summary.map_stats.kd_ratio if summary.map_stats.kd_ratio is not none else "N/A" }}</div>
                 <div class="muted" style="margin-top:6px;">Map headshot rate</div>
                 <div>{{ summary.map_stats.headshot_rate if summary.map_stats.headshot_rate is not none else "N/A" }}%</div>
+                <div class="muted" style="margin-top:6px;">Avg teammate distance</div>
+                <div>
+                  {% if summary.player_stats.avg_teammate_distance %}
+                    {{ summary.player_stats.avg_teammate_distance.overall if summary.player_stats.avg_teammate_distance.overall is not none else "N/A" }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </div>
                 <div class="muted" style="margin-top:6px;">Top weapons</div>
                 {% if summary.map_stats.top_weapons %}
                   {% for entry in summary.map_stats.top_weapons %}
@@ -350,6 +371,14 @@
               <div class="card">
                 <div class="muted">Attack headshot rate</div>
                 <div>{{ summary.map_stats_attack.headshot_rate if summary.map_stats_attack.headshot_rate is not none else "N/A" }}%</div>
+                <div class="muted" style="margin-top:6px;">Avg teammate distance</div>
+                <div>
+                  {% if summary.player_stats.avg_teammate_distance %}
+                    {{ summary.player_stats.avg_teammate_distance.attack if summary.player_stats.avg_teammate_distance.attack is not none else "N/A" }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </div>
                 <div class="muted" style="margin-top:6px;">Top weapons (attack)</div>
                 {% if summary.map_stats_attack.top_weapons %}
                   {% for entry in summary.map_stats_attack.top_weapons %}
@@ -424,6 +453,14 @@
               <div class="card">
                 <div class="muted">Defense headshot rate</div>
                 <div>{{ summary.map_stats_defense.headshot_rate if summary.map_stats_defense.headshot_rate is not none else "N/A" }}%</div>
+                <div class="muted" style="margin-top:6px;">Avg teammate distance</div>
+                <div>
+                  {% if summary.player_stats.avg_teammate_distance %}
+                    {{ summary.player_stats.avg_teammate_distance.defense if summary.player_stats.avg_teammate_distance.defense is not none else "N/A" }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </div>
                 <div class="muted" style="margin-top:6px;">Top weapons (defense)</div>
                 {% if summary.map_stats_defense.top_weapons %}
                   {% for entry in summary.map_stats_defense.top_weapons %}
