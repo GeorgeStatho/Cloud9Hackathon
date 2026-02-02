@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict
 
@@ -28,13 +30,20 @@ def generate_team_nearsite_series(
     side: str = "all",
 ) -> None:
     players = _load_team_players(team_name)
-    for player_name in players.keys():
-        generate_player_nearsite_series(
-            team_name=team_name,
-            player_name=player_name,
-            time_seconds=time_seconds,
-            side=side,
-        )
+    max_workers = min(8, os.cpu_count() or 4)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(
+                generate_player_nearsite_series,
+                team_name=team_name,
+                player_name=player_name,
+                time_seconds=time_seconds,
+                side=side,
+            )
+            for player_name in players.keys()
+        ]
+        for future in as_completed(futures):
+            future.result()
 
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict
 
@@ -26,10 +28,20 @@ def _load_team_players(team_name: str) -> Dict[str, str]:
 def generate_team_player_statistics(team_name: str) -> None:
     players = _load_team_players(team_name)
     event_stats = compute_team_player_event_stats(team_name)
-    for player_name, player_id in players.items():
-        generate_player_statistics_for_player(
-            team_name, player_name, player_id, event_stats
-        )
+    max_workers = min(8, os.cpu_count() or 4)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(
+                generate_player_statistics_for_player,
+                team_name,
+                player_name,
+                player_id,
+                event_stats,
+            )
+            for player_name, player_id in players.items()
+        ]
+        for future in as_completed(futures):
+            future.result()
 
 
 if __name__ == "__main__":
