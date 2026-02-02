@@ -66,7 +66,6 @@ def _build_output(
     map_info: Optional[Map],
     seconds_limit: float,
     map_name: Optional[str],
-    game_agents: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     output: Dict[str, Any] = {
         "player": player.name,
@@ -74,9 +73,6 @@ def _build_output(
         "map": map_name,
         "rounds": {},
     }
-    if game_agents:
-        output["game_agents"] = game_agents
-        output["agents"] = [game_agents[key] for key in sorted(game_agents.keys())]
 
     for rid, path in player.paths.items():
         samples = []
@@ -188,9 +184,6 @@ def _process_event_for_player(
         if new_game_id and new_game_id != state.game_id:
             state.game_id = new_game_id
             state.round_in_game = 0
-            agent_name, agent_game_id = reader.find_player_agent(event, player_key)
-            if agent_name and agent_game_id:
-                state.game_agents[str(agent_game_id)] = agent_name
 
         state.round_in_game += 1
 
@@ -299,7 +292,6 @@ def _finalize_outputs(
                 map_obj,
                 seconds_limit,
                 map_name,
-                game_agents=player_state.game_agents,
             )
             output["attack_rounds"] = _build_output(
                 player_state.player_attack, map_obj, seconds_limit, map_name

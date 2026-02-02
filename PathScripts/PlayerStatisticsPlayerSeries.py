@@ -69,7 +69,6 @@ def generate_player_statistics_for_player(
         with open(paths_json, "r", encoding="utf-8") as file_handle:
             payload = json.load(file_handle)
 
-        game_agents = payload.get("game_agents", {}) or {}
         map_key = map_name.lower()
         map_stats = player_stats_by_map.get(
             map_key,
@@ -80,8 +79,10 @@ def generate_player_statistics_for_player(
                 "death_count": 0,
                 "plant_count": 0,
                 "defuse_count": 0,
+                "game_agents": {},
             },
         )
+        game_agents = map_stats.get("game_agents", {}) or {}
         stats = {
             "team": team_name,
             "player": player_name,

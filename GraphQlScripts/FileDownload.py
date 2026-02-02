@@ -1,6 +1,6 @@
 from GraphQlScripts.BasicFunctionalities import *
 
-from GraphQlScripts.Keys import API_KEY
+from GraphQlScripts import Keys
 
 import os
 import time
@@ -9,10 +9,14 @@ import requests
 API_URL = "https://api.grid.gg/file-download/list/{seriesId}"
 GAME_ID = "6"  # Valorant game ID. Don't want LOL Data
 
-headers = {
-    "Accept": "application/json",
-    "x-api-key": API_KEY,
-}
+def _get_headers() -> dict:
+    api_key = Keys.API_KEY or os.environ.get("GRID_API_KEY", "")
+    if not api_key:
+        raise ValueError("GRID API key is not set. Provide it via Keys.setkey() or GRID_API_KEY.")
+    return {
+        "Accept": "application/json",
+        "x-api-key": api_key,
+    }
 
 SERIES_DATA_DIR = "SeriesData"
 os.makedirs(SERIES_DATA_DIR, exist_ok=True)
@@ -31,7 +35,7 @@ def _request_with_backoff(
     for attempt in range(max_retries):
         time.sleep(delay_between_calls)
         try:
-            response = requests.get(url, headers=headers, stream=stream, timeout=timeout)
+            response = requests.get(url, headers=_get_headers(), stream=stream, timeout=timeout)
         except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError):
             time.sleep(delay)
             delay = min(delay * 2, 30)

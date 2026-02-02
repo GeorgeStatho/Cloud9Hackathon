@@ -24,6 +24,28 @@
         margin: 32px auto;
         padding: 24px;
       }
+
+      .back-link {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        text-decoration: none;
+      }
+      .back-link button {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid #2c3d44;
+        background: #0f1a1f;
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .back-link button:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
       .panel {
         background: var(--panel);
         border-radius: 16px;
@@ -78,6 +100,9 @@
     </style>
   </head>
   <body>
+    <a class="back-link" href="/">
+      <button type="button">Back</button>
+    </a>
     <div class="wrap">
       <div class="panel">
         <h1>{{ team_name }} Scouting Report</h1>
@@ -147,7 +172,11 @@
                 <div class="muted">Agent usage (by game)</div>
                 {% if summary.player_stats.agent_counts %}
                   {% for agent, count in summary.player_stats.agent_counts.items() %}
-                    <div>{{ agent }} — {{ count }}</div>
+                    <div>{{ agent }} â€” {{ count }}</div>
+                  {% endfor %}
+                {% elif summary.player_stats.game_agents %}
+                  {% for game_id, agent in summary.player_stats.game_agents.items() %}
+                    <div>{{ agent }} â€” {{ game_id }}</div>
                   {% endfor %}
                 {% else %}
                   <div>N/A</div>

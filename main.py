@@ -16,25 +16,39 @@ from PathScripts.PlayerStatisticsTeamSeries import generate_team_player_statisti
 
 from GraphQlScripts.GraphQlmain import generatePlayersFromTeamName,generateTeamSeriesFiles
 
+from GraphQlScripts import Keys
+
+def _emit_progress(step: int, total: int, message: str) -> None:
+    print(f"[progress] {step}/{total} {message}", flush=True)
+
+
 def run_pipeline(team_name: str, api_key: str, seconds_limit: float, time_threshold: float) -> None:
     # Store the API key for any downstream scripts that read from env.
     os.environ["GRID_API_KEY"] = api_key
+    Keys.setkey(api_key)
+    total_steps = 6
 
+    _emit_progress(1, total_steps, "Generating player files")
     print(f"[pipeline] Generating Player Files for team: {team_name}")
     generatePlayersFromTeamName(team_name)
 
+    _emit_progress(2, total_steps, "Generating series files")
     print(f"[pipeline] Generating Series Files for team: {team_name}")
     generateTeamSeriesFiles(team_name)
 
+    _emit_progress(3, total_steps, "Generating path JSONs")
     print(f"[pipeline] Generating path JSONs for team: {team_name}")
     generateTeamPaths(team_name, seconds_limit=seconds_limit)
 
+    _emit_progress(4, total_steps, "Rendering team overlays")
     print(f"[pipeline] Rendering team overlays for team: {team_name}")
     render_team_paths(team_name, side="both")
 
+    _emit_progress(5, total_steps, "Generating NearSite summaries")
     print(f"[pipeline] Generating NearSite summaries for team: {team_name}")
     generate_team_nearsite_series(team_name, time_threshold, side="all")
 
+    _emit_progress(6, total_steps, "Generating player statistics")
     print(f"[pipeline] Generating player statistics for team: {team_name}")
     generate_team_player_statistics(team_name)
 

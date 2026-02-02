@@ -97,6 +97,42 @@ def _map_from_record(reader: JsonlEventReader, record: dict) -> Optional[str]:
     return None
 
 
+def _iter_agents_from_event(event: dict) -> List[Dict[str, Optional[str]]]:
+    agents: List[Dict[str, Optional[str]]] = []
+    candidates = [
+        event.get("seriesState"),
+        event.get("seriesStateDelta"),
+        event.get("actor", {}).get("state"),
+        event.get("actor", {}).get("stateDelta"),
+        event.get("target", {}).get("state"),
+        event.get("target", {}).get("stateDelta"),
+    ]
+    for state in candidates:
+        if not state:
+            continue
+        for game in state.get("games", []) or []:
+            game_id = game.get("id")
+            map_name = game.get("map", {}).get("name")
+            for team in game.get("teams", []) or []:
+                for player in team.get("players", []) or []:
+                    player_id = player.get("id")
+                    if player_id is None:
+                        continue
+                    character = player.get("character") or {}
+                    agent = character.get("name") or character.get("id")
+                    if not agent:
+                        continue
+                    agents.append(
+                        {
+                            "player_id": str(player_id),
+                            "game_id": str(game_id) if game_id is not None else None,
+                            "map": str(map_name).lower() if map_name else None,
+                            "agent": str(agent),
+                        }
+                    )
+    return agents
+
+
 def compute_team_player_event_stats(team_name: str) -> Dict[str, Dict[str, Dict[str, List[float] | int | float]]]:
     """
     Returns {player_id: {map_name: stats}} where stats include:
@@ -106,6 +142,7 @@ def compute_team_player_event_stats(team_name: str) -> Dict[str, Dict[str, Dict[
       - death_count
       - plant_count
       - defuse_count
+      - game_agents (per-game agent selection)
     """
     stats: Dict[str, Dict[str, Dict[str, List[float] | int | float]]] = {}
     for jsonl_path in _series_jsonl_files(team_name):
@@ -119,6 +156,30 @@ def compute_team_player_event_stats(team_name: str) -> Dict[str, Dict[str, Dict[
                 detected_map = reader.find_map_name(event)
                 if detected_map:
                     current_map = detected_map
+
+                for agent_entry in _iter_agents_from_event(event):
+                    player_id = agent_entry.get("player_id")
+                    game_id = agent_entry.get("game_id")
+                    map_name = agent_entry.get("map") or (current_map.lower() if current_map else None)
+                    agent = agent_entry.get("agent")
+                    if not player_id or not game_id or not map_name or not agent:
+                        continue
+                    player_maps = stats.setdefault(str(player_id), {})
+                    entry = player_maps.setdefault(
+                        map_name,
+                        {
+                            "kill_count": 0,
+                            "kill_distances": [],
+                            "avg_kill_distance": 0.0,
+                            "death_count": 0,
+                            "plant_count": 0,
+                            "defuse_count": 0,
+                            "game_agents": {},
+                        },
+                    )
+                    game_agents = entry.setdefault("game_agents", {})
+                    if str(game_id) not in game_agents:
+                        game_agents[str(game_id)] = str(agent)
 
                 event_type = event.get("type")
                 if event_type not in (KILL_EVENT_TYPES | DEATH_EVENT_TYPES | PLANT_EVENT_TYPES | DEFUSE_EVENT_TYPES):
@@ -150,6 +211,7 @@ def compute_team_player_event_stats(team_name: str) -> Dict[str, Dict[str, Dict[
                                 "death_count": 0,
                                 "plant_count": 0,
                                 "defuse_count": 0,
+                                "game_agents": {},
                             },
                         )
                         entry["kill_count"] += 1
@@ -169,6 +231,7 @@ def compute_team_player_event_stats(team_name: str) -> Dict[str, Dict[str, Dict[
                             "death_count": 0,
                             "plant_count": 0,
                             "defuse_count": 0,
+                            "game_agents": {},
                         },
                     )
                     entry["death_count"] += 1
@@ -184,6 +247,7 @@ def compute_team_player_event_stats(team_name: str) -> Dict[str, Dict[str, Dict[
                             "death_count": 0,
                             "plant_count": 0,
                             "defuse_count": 0,
+                            "game_agents": {},
                         },
                     )
                     entry["plant_count"] += 1
@@ -199,6 +263,7 @@ def compute_team_player_event_stats(team_name: str) -> Dict[str, Dict[str, Dict[
                             "death_count": 0,
                             "plant_count": 0,
                             "defuse_count": 0,
+                            "game_agents": {},
                         },
                     )
                     entry["defuse_count"] += 1

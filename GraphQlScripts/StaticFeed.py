@@ -112,5 +112,5 @@ def getPlayerStats(playerID:str):
     filename = f"{playerID}_playerstats.json".replace(" ", "_")
     writeToJSON(stats_result, filename)
     return stats_result
-getPlayerStats("3259")
+
 
