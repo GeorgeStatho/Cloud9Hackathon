@@ -29,7 +29,7 @@ def _request_with_backoff(
     stream: bool = False,
     timeout: int = 30,
     max_retries: int = 5,
-    delay_between_calls: float = 3.0,
+    delay_between_calls: float = 1.5,
 ):
     delay = 2
     for attempt in range(max_retries):

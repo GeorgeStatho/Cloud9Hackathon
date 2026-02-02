@@ -1,0 +1,16 @@
+What Agents Players use-----
+If Players are close quarters or long range(sniper) focused ---
+Player Accuracy stats
+Average distance to teammate
+k/d ratio--
+Most Used weapons--
+headshot rates--
+How do they budget(esp in early rounds)
+weapon rate per round--
+headshot kill rate
+Ability usage near specificsites--
+Team:
+Sort by:
+    Most kills
+    Higehst k/d
+    Deaths

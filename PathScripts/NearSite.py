@@ -4,7 +4,10 @@ import json
 import math
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+
+from PositionalObjects.JsonlEventReader import JsonlEventReader
+from PathScripts.SeriesRoster import collect_team_players
 
 # Allow running as a script from the repo root by ensuring the root is on sys.path.
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -106,6 +109,110 @@ def _closest_callout(callouts: List[Dict[str, Any]], gx: float, gy: float) -> Op
     return best
 
 
+def _series_jsonl_files(team_name: str) -> Iterable[Path]:
+    safe_team = team_name.replace(" ", "_")
+    series_dir = Path("Data") / safe_team / "series"
+    if not series_dir.exists():
+        return []
+    jsonl_files = list(series_dir.glob("events_*_grid.jsonl")) + list(
+        series_dir.glob("events_*_grid.jsonl.zip")
+    )
+    return sorted(jsonl_files)
+
+
+def _event_actor_id(event: Dict[str, Any]) -> Optional[str]:
+    actor = event.get("actor", {}) or {}
+    if actor.get("id") is not None:
+        return str(actor.get("id"))
+    state = actor.get("state") or {}
+    if state.get("id") is not None:
+        return str(state.get("id"))
+    return None
+
+
+def _ability_name(event: Dict[str, Any]) -> Optional[str]:
+    target = event.get("target", {}) or {}
+    if target.get("id"):
+        return str(target.get("id"))
+    if target.get("name"):
+        return str(target.get("name"))
+    return None
+
+
+def _ability_usage_near_callouts(
+    team_name: str,
+    player_name: str,
+    map_name: str,
+    callouts: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    players = collect_team_players(team_name)
+    player_id = players.get(player_name)
+    if player_id is None:
+        lookup = {name.lower(): pid for name, pid in players.items()}
+        player_id = lookup.get(player_name.lower())
+    if not player_id:
+        return []
+
+    results: List[Dict[str, Any]] = []
+    counts: Dict[Tuple[str, str], int] = {}
+    wanted = {str(player_id).lower()}
+    for jsonl_path in _series_jsonl_files(team_name):
+        reader = JsonlEventReader(str(jsonl_path))
+        for record in reader.iter_records():
+            for event in reader.iter_events(record):
+                if event.get("type") != "player-used-ability":
+                    continue
+                actor_id = _event_actor_id(event)
+                if not actor_id or str(actor_id) != str(player_id):
+                    continue
+                snapshots = reader.extract_player_snapshots(event, wanted)
+                snapshot = snapshots.get(str(player_id).lower())
+                if not snapshot:
+                    continue
+                event_map = snapshot.get("map_name")
+                if not event_map or str(event_map).lower() != map_name.lower():
+                    continue
+                gx = snapshot.get("gx")
+                gy = snapshot.get("gy")
+                if gx is None or gy is None:
+                    continue
+                closest = _closest_callout(callouts, float(gx), float(gy))
+                if not closest:
+                    continue
+                key = (
+                    closest.get("regionName") or "",
+                    closest.get("superRegionName") or "",
+                )
+                counts[key] = counts.get(key, 0) + 1
+                results.append(
+                    {
+                        "occurredAt": event.get("occurredAt"),
+                        "ability": _ability_name(event),
+                        "gx": gx,
+                        "gy": gy,
+                        "regionName": closest.get("regionName"),
+                        "superRegionName": closest.get("superRegionName"),
+                        "distance": closest.get("distance"),
+                    }
+                )
+    total = sum(counts.values())
+    percentages: Dict[str, float] = {}
+    if total > 0:
+        for (region, super_region), count in counts.items():
+            key = f"{region}|{super_region}"
+            percentages[key] = round((count / total) * 100.0, 2)
+
+    return {
+        "events": results,
+        "total_samples": total,
+        "counts": {
+            f"{region}|{super_region}": count
+            for (region, super_region), count in counts.items()
+        },
+        "percentages": percentages,
+    }
+
+
 def _sample_at_time(
     round_samples: List[Dict[str, Any]], time_seconds: float
 ) -> Optional[Dict[str, Any]]:
@@ -196,6 +303,13 @@ def nearest_regions_for_time(
             key = f"{region}|{super_region}"
             percentages_defense[key] = round((count / total_defense) * 100.0, 2)
 
+    ability_usage = _ability_usage_near_callouts(
+        team_name=team_name,
+        player_name=player_name,
+        map_name=map_name,
+        callouts=callouts,
+    )
+
     return {
         "team": team_name,
         "player": player_name,
@@ -220,6 +334,7 @@ def nearest_regions_for_time(
         "percentages": percentages,
         "percentages_attack": percentages_attack,
         "percentages_defense": percentages_defense,
+        "ability_usage": ability_usage,
     }
 
 

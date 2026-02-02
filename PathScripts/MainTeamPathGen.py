@@ -4,7 +4,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 
 # Allow running as a script from the repo root by ensuring the root is on sys.path.
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -16,15 +16,34 @@ from AttackDefenseParser import parse_attack_defense_rounds
 from PathScripts.PathGenerator import build_team_round_paths_one_pass
 
 
-def _load_team_players(team_name: str) -> Dict[str, str]:
-    # Read Data/<Team>/<Team>_players.json and return nickname->id mapping.
-    safe_team = team_name.replace(" ", "_")
-    players_path = Path("Data") / safe_team / f"{safe_team}_players.json"
-    if not players_path.exists():
-        raise FileNotFoundError(f"Team players file not found: {players_path}")
-    with open(players_path, "r", encoding="utf-8") as file_handle:
-        data = json.load(file_handle)
-    return {str(name): str(pid) for name, pid in data.items()}
+def _load_end_state(end_state_path: Path) -> Dict[str, Any]:
+    # Load the end_state JSON so we can extract the series roster for this team.
+    with open(end_state_path, "r", encoding="utf-8") as file_handle:
+        return json.load(file_handle)
+
+
+def _players_from_end_state(payload: Dict[str, Any], team_name: str) -> Dict[str, str]:
+    # Extract nickname->id mapping for the requested team from seriesState.teams.
+    series_state = payload.get("seriesState", {}) or {}
+    teams = series_state.get("teams", []) or []
+    target = team_name.strip().lower()
+    chosen_team: Dict[str, Any] | None = None
+    for team in teams:
+        name = str(team.get("name") or "").strip().lower()
+        if name and name == target:
+            chosen_team = team
+            break
+    if chosen_team is None:
+        return {}
+    players = chosen_team.get("players", []) or []
+    mapping: Dict[str, str] = {}
+    for player in players:
+        pid = player.get("id")
+        if pid is None:
+            continue
+        pname = player.get("name") or player.get("nickname") or str(pid)
+        mapping[str(pname)] = str(pid)
+    return mapping
 
 
 def _series_files(team_name: str) -> Iterable[Tuple[str, Path, Path]]:
@@ -76,10 +95,16 @@ def generateTeamPaths(
     team_name: str,
     seconds_limit: float = 5.0,
 ) -> None:
-    players = _load_team_players(team_name)
-
     # Iterate each series for this team
     for series_id, end_state_path, jsonl_path in _series_files(team_name):
+        end_state_payload = _load_end_state(end_state_path)
+        players = _players_from_end_state(end_state_payload, team_name)
+        if not players:
+            print(
+                f"[team paths] team={team_name} series={series_id} "
+                "no matching players found in end_state; skipping."
+            )
+            continue
         # Decide which maps to generate for this series
         map_names = _maps_from_end_state(end_state_path)
         jsonl_maps = _maps_from_jsonl(jsonl_path)

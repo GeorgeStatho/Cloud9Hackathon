@@ -1,26 +1,20 @@
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 from typing import Dict, Iterable, Optional,List
-
+import json
 # Allow running as a script from the repo root by ensuring the root is on sys.path.
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from PathScripts.PlayerStatisticsParser import compute_team_player_event_stats
+from PathScripts.SeriesRoster import collect_team_players
 
 
 def _load_team_players(team_name: str) -> Dict[str, str]:
-    safe_team = team_name.replace(" ", "_")
-    players_path = Path("Data") / safe_team / f"{safe_team}_players.json"
-    if not players_path.exists():
-        return {}
-    with open(players_path, "r", encoding="utf-8") as file_handle:
-        data = json.load(file_handle)
-    return {str(name): str(pid) for name, pid in data.items()}
+    return collect_team_players(team_name)
 
 
 def _avg(values: list[float]) -> Optional[float]:
@@ -80,6 +74,7 @@ def generate_player_statistics_for_player(
                 "plant_count": 0,
                 "defuse_count": 0,
                 "game_agents": {},
+                "round_shots": {},
             },
         )
         game_agents = map_stats.get("game_agents", {}) or {}
@@ -96,6 +91,7 @@ def generate_player_statistics_for_player(
             "death_count": map_stats["death_count"],
             "plant_count": map_stats["plant_count"],
             "defuse_count": map_stats["defuse_count"],
+            "round_shots": map_stats.get("round_shots", {}),
         }
 
         output_path = paths_json.with_name(f"{paths_json.stem}_playerstatistics.json")

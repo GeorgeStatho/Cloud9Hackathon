@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{{ team_name }} — Scouting Report</title>
+    <title>{{ team_name }} - Scouting Report</title>
     <style>
       :root {
         --bg: #0f1a1f;
@@ -117,12 +117,59 @@
       <div class="panel player-panel" data-player-panel="{{ player_name }}" style="display:none;">
         <h2>{{ player_name }}</h2>
         <div class="tabs map-tabs">
+          {% if "__overall__" in maps %}
+            <button class="tab" data-map="__overall__">Overall</button>
+          {% endif %}
           {% for map_name in maps.keys() %}
-            <button class="tab" data-map="{{ map_name }}">{{ map_name }}</button>
+            {% if map_name != "__overall__" %}
+              <button class="tab" data-map="{{ map_name }}">{{ map_name }}</button>
+            {% endif %}
           {% endfor %}
         </div>
 
+        {% if "__overall__" in maps %}
+        {% set overall = maps["__overall__"]["overall_player"] %}
+        <div class="map-panel" data-map-panel="__overall__" style="display:none;">
+          <h3>Overall</h3>
+          <div class="grid">
+            <div class="card">
+              <div class="muted">Top agents</div>
+              {% if overall.top_agents %}
+                {% for entry in overall.top_agents %}
+                  <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                {% endfor %}
+              {% else %}
+                <div>N/A</div>
+              {% endif %}
+            </div>
+            <div class="card">
+              <div class="muted">Top weapons</div>
+              {% if overall.top_weapons %}
+                {% for entry in overall.top_weapons %}
+                  <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                {% endfor %}
+              {% else %}
+                <div>N/A</div>
+              {% endif %}
+            </div>
+            <div class="card">
+              <div class="muted">K/D ratio</div>
+              <div>{{ overall.kd_ratio if overall.kd_ratio is not none else "N/A" }}</div>
+            </div>
+            <div class="card">
+              <div class="muted">Headshot rate</div>
+              <div>{{ overall.headshot_rate if overall.headshot_rate is not none else "N/A" }}%</div>
+            </div>
+            <div class="card">
+              <div class="muted">Avg kill distance</div>
+              <div>{{ overall.avg_kill_distance if overall.avg_kill_distance is not none else "N/A" }}</div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
         {% for map_name, summary in maps.items() %}
+        {% if map_name != "__overall__" %}
         <div
           class="map-panel"
           data-map-panel="{{ map_name }}"
@@ -172,11 +219,11 @@
                 <div class="muted">Agent usage (by game)</div>
                 {% if summary.player_stats.agent_counts %}
                   {% for agent, count in summary.player_stats.agent_counts.items() %}
-                    <div>{{ agent }} â€” {{ count }}</div>
+                    <div>{{ agent }} -- {{ count }}</div>
                   {% endfor %}
                 {% elif summary.player_stats.game_agents %}
                   {% for game_id, agent in summary.player_stats.game_agents.items() %}
-                    <div>{{ agent }} â€” {{ game_id }}</div>
+                    <div>{{ agent }} -- {{ game_id }}</div>
                   {% endfor %}
                 {% else %}
                   <div>N/A</div>
@@ -279,6 +326,7 @@
             </div>
           </div>
         </div>
+        {% endif %}
         {% endfor %}
       </div>
       {% endfor %}

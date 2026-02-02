@@ -179,6 +179,69 @@ def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]
     }
 
 
+def _top_n_with_percent(counts: Dict[str, int], n: int = 3) -> List[Dict[str, Any]]:
+    total = sum(counts.values())
+    ranked = sorted(counts.items(), key=lambda item: item[1], reverse=True)[:n]
+    output: List[Dict[str, Any]] = []
+    for name, count in ranked:
+        percent = round((count / total) * 100.0, 2) if total else None
+        output.append({"name": name, "count": count, "percent": percent})
+    return output
+
+
+def _aggregate_player_overall(maps: Dict[str, Any]) -> Dict[str, Any]:
+    total_kills = 0
+    total_deaths = 0
+    kill_distances: List[float] = []
+    agent_counts: Dict[str, int] = {}
+    weapon_counts: Dict[str, int] = {}
+    headshots = 0
+    bodyshots = 0
+    total_games = 0
+
+    for map_summary in maps.values():
+        player_stats = map_summary.get("player_stats", {}) or {}
+        total_kills += int(player_stats.get("kill_count", 0) or 0)
+        total_deaths += int(player_stats.get("death_count", 0) or 0)
+        kill_distances.extend(player_stats.get("kill_distances", []) or [])
+
+        agents = player_stats.get("agent_counts", {}) or {}
+        for agent, count in agents.items():
+            agent_counts[agent] = agent_counts.get(agent, 0) + int(count or 0)
+        total_games += int(player_stats.get("games", 0) or 0)
+
+        round_shots = player_stats.get("round_shots", {}) or {}
+        for rounds in round_shots.values():
+            for round_payload in (rounds or {}).values():
+                headshots += int(round_payload.get("headshots", 0) or 0)
+                bodyshots += int(round_payload.get("bodyshots", 0) or 0)
+                weapons = round_payload.get("weapons", {}) or {}
+                for weapon, count in weapons.items():
+                    weapon_counts[weapon] = weapon_counts.get(weapon, 0) + int(count or 0)
+
+    avg_kill_distance = (
+        round(sum(kill_distances) / len(kill_distances), 2) if kill_distances else None
+    )
+    kd_ratio = (
+        round(total_kills / total_deaths, 2)
+        if total_deaths
+        else (round(float(total_kills), 2) if total_kills else None)
+    )
+    shot_total = headshots + bodyshots
+    headshot_rate = round((headshots / shot_total) * 100.0, 2) if shot_total else None
+
+    return {
+        "total_kills": total_kills,
+        "total_deaths": total_deaths,
+        "kd_ratio": kd_ratio,
+        "headshot_rate": headshot_rate,
+        "avg_kill_distance": avg_kill_distance,
+        "top_agents": _top_n_with_percent(agent_counts, 3),
+        "top_weapons": _top_n_with_percent(weapon_counts, 3),
+        "total_games": total_games,
+    }
+
+
 def _collect_player_map_stats(team_name: str) -> Dict[str, Dict[str, Any]]:
     safe_team = team_name.replace(" ", "_")
     players_root = ROOT_DIR / "Data" / safe_team / "Players"
@@ -201,7 +264,12 @@ def _collect_player_map_stats(team_name: str) -> Dict[str, Dict[str, Any]]:
             map_name = map_dir.name
             results[player_name][map_name] = _build_player_map_summary(paths_path, map_name)
 
-        if not results[player_name]:
+        if results[player_name]:
+            results[player_name]["__overall__"] = {
+                "overall_player": _aggregate_player_overall(results[player_name]),
+                "player_name": player_name,
+            }
+        else:
             results.pop(player_name, None)
 
     return results

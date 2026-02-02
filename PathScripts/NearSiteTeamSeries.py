@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 from typing import Dict
@@ -11,16 +10,16 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from PathScripts.NearSitePlayerSeries import generate_player_nearsite_series
+from PathScripts.SeriesRoster import collect_team_players
 
 
 def _load_team_players(team_name: str) -> Dict[str, str]:
-    safe_team = team_name.replace(" ", "_")
-    players_path = Path("Data") / safe_team / f"{safe_team}_players.json"
-    if not players_path.exists():
-        raise FileNotFoundError(f"Team players file not found: {players_path}")
-    with open(players_path, "r", encoding="utf-8") as file_handle:
-        data = json.load(file_handle)
-    return {str(name): str(pid) for name, pid in data.items()}
+    players = collect_team_players(team_name)
+    if not players:
+        raise FileNotFoundError(
+            f"No end_state roster found for team '{team_name}'."
+        )
+    return players
 
 
 def generate_team_nearsite_series(
