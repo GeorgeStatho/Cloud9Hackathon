@@ -62,6 +62,15 @@ def generate_player_statistics_for_player(
         map_name = _infer_map_name(paths_json)
         with open(paths_json, "r", encoding="utf-8") as file_handle:
             payload = json.load(file_handle)
+        attack_rounds = payload.get("attack_rounds", {}) or {}
+        defense_rounds = payload.get("defense_rounds", {}) or {}
+        round_sides: Dict[str, str] = {}
+        for round_id, samples in attack_rounds.items():
+            if samples:
+                round_sides[str(round_id)] = "attack"
+        for round_id, samples in defense_rounds.items():
+            if samples:
+                round_sides[str(round_id)] = "defense"
 
         map_key = map_name.lower()
         map_stats = player_stats_by_map.get(
@@ -78,6 +87,13 @@ def generate_player_statistics_for_player(
             },
         )
         game_agents = map_stats.get("game_agents", {}) or {}
+        round_shots = map_stats.get("round_shots", {}) or {}
+        for game_rounds in round_shots.values():
+            for round_id, payload in (game_rounds or {}).items():
+                side = round_sides.get(str(round_id))
+                if side:
+                    payload["side"] = side
+
         stats = {
             "team": team_name,
             "player": player_name,
@@ -91,7 +107,7 @@ def generate_player_statistics_for_player(
             "death_count": map_stats["death_count"],
             "plant_count": map_stats["plant_count"],
             "defuse_count": map_stats["defuse_count"],
-            "round_shots": map_stats.get("round_shots", {}),
+            "round_shots": round_shots,
         }
 
         output_path = paths_json.with_name(f"{paths_json.stem}_playerstatistics.json")

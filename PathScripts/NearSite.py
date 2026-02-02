@@ -5,6 +5,7 @@ import math
 import sys
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+import threading
 
 from PositionalObjects.JsonlEventReader import JsonlEventReader
 from PathScripts.SeriesRoster import collect_team_players
@@ -206,6 +207,8 @@ def _ability_cache_path(team_name: str) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir / "ability_events.json"
 
+_ABILITY_CACHE_LOCK = threading.Lock()
+
 
 def _load_cached_ability_index(team_name: str) -> Optional[Dict[str, Any]]:
     cache_path = _ability_cache_path(team_name)
@@ -287,21 +290,24 @@ def _build_ability_index(team_name: str) -> Dict[str, Any]:
                 )
 
     cache_path = _ability_cache_path(team_name)
-    with open(cache_path, "w", encoding="utf-8") as file_handle:
+    temp_path = cache_path.with_suffix(cache_path.suffix + ".tmp")
+    with open(temp_path, "w", encoding="utf-8") as file_handle:
         json.dump(
             {"version": 2, "sources": sources, "index": index},
             file_handle,
             indent=2,
             ensure_ascii=False,
         )
+    temp_path.replace(cache_path)
     return index
 
 
 def _ability_event_index(team_name: str) -> Dict[str, Any]:
-    cached = _load_cached_ability_index(team_name)
-    if cached is not None:
-        return cached
-    return _build_ability_index(team_name)
+    with _ABILITY_CACHE_LOCK:
+        cached = _load_cached_ability_index(team_name)
+        if cached is not None:
+            return cached
+        return _build_ability_index(team_name)
 
 
 def _sample_at_time(

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import os
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable
 
@@ -28,24 +26,15 @@ def _player_paths(team_name: str) -> Iterable[Path]:
 def render_team_paths(team_name: str, side: str = "all") -> None:
     # Render overlays for every player's paths JSON in the team folder.
     team_paths_by_map: dict[str, list[Path]] = {}
-    max_workers = min(8, os.cpu_count() or 4)
-
-    def _render_player(paths_json: Path) -> None:
+    for paths_json in _player_paths(team_name):
+        map_name = _infer_map_name(paths_json)
+        team_paths_by_map.setdefault(map_name, []).append(paths_json)
         player_name = paths_json.parent.name
         if side == "both":
             render_player_paths(team_name, player_name, paths_json, side="attack")
             render_player_paths(team_name, player_name, paths_json, side="defense")
         else:
             render_player_paths(team_name, player_name, paths_json, side=side)
-
-    futures = []
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for paths_json in _player_paths(team_name):
-            map_name = _infer_map_name(paths_json)
-            team_paths_by_map.setdefault(map_name, []).append(paths_json)
-            futures.append(executor.submit(_render_player, paths_json))
-        for future in as_completed(futures):
-            future.result()
     for paths_json in _player_paths(team_name):
         player_name = paths_json.parent.name
         map_name = _infer_map_name(paths_json)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict
 
@@ -11,6 +11,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+from PathScripts.NearSite import _ability_event_index
 from PathScripts.NearSitePlayerSeries import generate_player_nearsite_series
 from PathScripts.SeriesRoster import collect_team_players
 
@@ -30,8 +31,10 @@ def generate_team_nearsite_series(
     side: str = "all",
 ) -> None:
     players = _load_team_players(team_name)
+    # Build ability cache once before spawning workers.
+    _ability_event_index(team_name)
     max_workers = min(8, os.cpu_count() or 4)
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = [
             executor.submit(
                 generate_player_nearsite_series,

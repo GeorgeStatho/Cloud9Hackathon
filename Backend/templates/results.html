@@ -165,6 +165,28 @@
               <div>{{ overall.avg_kill_distance if overall.avg_kill_distance is not none else "N/A" }}</div>
             </div>
           </div>
+          <div class="card" style="margin-top:16px;">
+            <h4>Per-map stats</h4>
+            <div class="grid">
+              {% for map_name, summary in maps.items() %}
+                {% if map_name != "__overall__" %}
+                <div class="card">
+                  <div class="muted">{{ map_name }}</div>
+                  <div>K/D: {{ summary.map_stats.kd_ratio if summary.map_stats.kd_ratio is not none else "N/A" }}</div>
+                  <div>Headshot rate: {{ summary.map_stats.headshot_rate if summary.map_stats.headshot_rate is not none else "N/A" }}%</div>
+                  <div class="muted" style="margin-top:6px;">Top weapons</div>
+                  {% if summary.map_stats.top_weapons %}
+                    {% for entry in summary.map_stats.top_weapons %}
+                      <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                    {% endfor %}
+                  {% else %}
+                    <div>N/A</div>
+                  {% endif %}
+                </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
         </div>
         {% endif %}
 
@@ -177,6 +199,9 @@
           data-paths-rel="{{ summary.paths_rel }}"
           data-nearsite-rel="{{ summary.nearsite_rel or '' }}"
           data-map-image-rel="{{ summary.map_image_rel }}"
+          data-map-stats='{{ summary.map_stats | tojson }}'
+          data-map-stats-attack='{{ summary.map_stats_attack | tojson }}'
+          data-map-stats-defense='{{ summary.map_stats_defense | tojson }}'
           style="display:none;"
         >
           <h3>{{ map_name }}</h3>
@@ -198,6 +223,8 @@
               <div class="card">
                 <div class="muted">Rounds played</div>
                 <div>{{ summary.overall.rounds }}</div>
+                <div class="muted" style="margin-top:6px;">Games played</div>
+                <div>{{ summary.player_stats.games if summary.player_stats.games is not none else "N/A" }}</div>
               </div>
               <div class="card">
                 <div class="muted">Avg starting net worth</div>
@@ -240,6 +267,40 @@
                   {% endif %}
                 </div>
               </div>
+              <div class="card">
+                <div class="muted">Map K/D ratio</div>
+                <div>{{ summary.map_stats.kd_ratio if summary.map_stats.kd_ratio is not none else "N/A" }}</div>
+                <div class="muted" style="margin-top:6px;">Map headshot rate</div>
+                <div>{{ summary.map_stats.headshot_rate if summary.map_stats.headshot_rate is not none else "N/A" }}%</div>
+                <div class="muted" style="margin-top:6px;">Top weapons</div>
+                {% if summary.map_stats.top_weapons %}
+                  {% for entry in summary.map_stats.top_weapons %}
+                    <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                  {% endfor %}
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
+              <div class="card">
+                <div class="muted">Weapon rate by round</div>
+                {% if summary.map_stats.weapon_rates_by_round %}
+                  <input
+                    class="weapon-round-slider"
+                    data-role="weapon-round-slider"
+                    data-scope="overall"
+                    type="range"
+                    min="1"
+                    max="{{ summary.map_stats.weapon_rates_by_round|length }}"
+                    step="1"
+                    value="1"
+                    style="width:100%;"
+                  />
+                  <div class="muted" data-role="weapon-round-label" data-scope="overall">Round 1</div>
+                  <div class="weapon-round-list" data-role="weapon-round-list" data-scope="overall"></div>
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
             </div>
           </div>
 
@@ -262,6 +323,8 @@
               <div class="card">
                 <div class="muted">Rounds played</div>
                 <div>{{ summary.attack.rounds }}</div>
+                <div class="muted" style="margin-top:6px;">Games played</div>
+                <div>{{ summary.player_stats.games if summary.player_stats.games is not none else "N/A" }}</div>
               </div>
               <div class="card">
                 <div class="muted">Avg starting net worth</div>
@@ -283,6 +346,38 @@
                 <div class="muted" data-scope="attack" data-role="signature-percent-2"></div>
                 <div data-scope="attack" data-role="signature-zone-3">N/A</div>
                 <div class="muted" data-scope="attack" data-role="signature-percent-3"></div>
+              </div>
+              <div class="card">
+                <div class="muted">Attack headshot rate</div>
+                <div>{{ summary.map_stats_attack.headshot_rate if summary.map_stats_attack.headshot_rate is not none else "N/A" }}%</div>
+                <div class="muted" style="margin-top:6px;">Top weapons (attack)</div>
+                {% if summary.map_stats_attack.top_weapons %}
+                  {% for entry in summary.map_stats_attack.top_weapons %}
+                    <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                  {% endfor %}
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
+              <div class="card">
+                <div class="muted">Weapon rate by round (attack)</div>
+                {% if summary.map_stats_attack.weapon_rates_by_round %}
+                  <input
+                    class="weapon-round-slider"
+                    data-role="weapon-round-slider"
+                    data-scope="attack"
+                    type="range"
+                    min="1"
+                    max="{{ summary.map_stats_attack.weapon_rates_by_round|length }}"
+                    step="1"
+                    value="1"
+                    style="width:100%;"
+                  />
+                  <div class="muted" data-role="weapon-round-label" data-scope="attack">Round 1</div>
+                  <div class="weapon-round-list" data-role="weapon-round-list" data-scope="attack"></div>
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -306,6 +401,8 @@
               <div class="card">
                 <div class="muted">Rounds played</div>
                 <div>{{ summary.defense.rounds }}</div>
+                <div class="muted" style="margin-top:6px;">Games played</div>
+                <div>{{ summary.player_stats.games if summary.player_stats.games is not none else "N/A" }}</div>
               </div>
               <div class="card">
                 <div class="muted">Avg starting net worth</div>
@@ -323,6 +420,38 @@
                 <div class="muted" data-scope="defense" data-role="signature-percent-2"></div>
                 <div data-scope="defense" data-role="signature-zone-3">N/A</div>
                 <div class="muted" data-scope="defense" data-role="signature-percent-3"></div>
+              </div>
+              <div class="card">
+                <div class="muted">Defense headshot rate</div>
+                <div>{{ summary.map_stats_defense.headshot_rate if summary.map_stats_defense.headshot_rate is not none else "N/A" }}%</div>
+                <div class="muted" style="margin-top:6px;">Top weapons (defense)</div>
+                {% if summary.map_stats_defense.top_weapons %}
+                  {% for entry in summary.map_stats_defense.top_weapons %}
+                    <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                  {% endfor %}
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
+              <div class="card">
+                <div class="muted">Weapon rate by round (defense)</div>
+                {% if summary.map_stats_defense.weapon_rates_by_round %}
+                  <input
+                    class="weapon-round-slider"
+                    data-role="weapon-round-slider"
+                    data-scope="defense"
+                    type="range"
+                    min="1"
+                    max="{{ summary.map_stats_defense.weapon_rates_by_round|length }}"
+                    step="1"
+                    value="1"
+                    style="width:100%;"
+                  />
+                  <div class="muted" data-role="weapon-round-label" data-scope="defense">Round 1</div>
+                  <div class="weapon-round-list" data-role="weapon-round-list" data-scope="defense"></div>
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -576,6 +705,78 @@
 
       document.querySelectorAll(".map-panel").forEach((panel) => {
         attachSignatureSliders(panel);
+      });
+
+      function setupWeaponRoundRates(panel, scope) {
+        const slider = panel.querySelector(`[data-role="weapon-round-slider"][data-scope="${scope}"]`);
+        const label = panel.querySelector(`[data-role="weapon-round-label"][data-scope="${scope}"]`);
+        const list = panel.querySelector(`[data-role="weapon-round-list"][data-scope="${scope}"]`);
+        if (!slider || !label || !list) return;
+
+        const mapStats =
+          scope === "attack"
+            ? (panel.__mapStatsAttack || {})
+            : scope === "defense"
+            ? (panel.__mapStatsDefense || {})
+            : (panel.__mapStats || {});
+        const rates = mapStats.weapon_rates_by_round || {};
+        const roundKeys = Object.keys(rates).sort((a, b) => Number(a) - Number(b));
+        if (!roundKeys.length) {
+          list.textContent = "N/A";
+          return;
+        }
+
+        slider.max = String(roundKeys.length);
+
+        const render = () => {
+          const idx = Math.max(0, Number(slider.value) - 1);
+          const roundKey = roundKeys[idx];
+          label.textContent = `Round ${roundKey}`;
+          const entries = rates[roundKey] || [];
+          if (!entries.length) {
+            list.textContent = "N/A";
+            return;
+          }
+          list.innerHTML = entries
+            .map((entry) => {
+              const pct = entry.percent != null ? `${entry.percent}%` : "N/A";
+              return `<div>${entry.name} -- ${pct}</div>`;
+            })
+            .join("");
+        };
+
+        slider.addEventListener("input", render);
+        render();
+      }
+
+      document.querySelectorAll(".map-panel").forEach((panel) => {
+        const mapStatsRaw = panel.getAttribute("data-map-stats");
+        const mapStatsAttackRaw = panel.getAttribute("data-map-stats-attack");
+        const mapStatsDefenseRaw = panel.getAttribute("data-map-stats-defense");
+        if (mapStatsRaw) {
+          try {
+            panel.__mapStats = JSON.parse(mapStatsRaw);
+          } catch {
+            panel.__mapStats = {};
+          }
+        }
+        if (mapStatsAttackRaw) {
+          try {
+            panel.__mapStatsAttack = JSON.parse(mapStatsAttackRaw);
+          } catch {
+            panel.__mapStatsAttack = {};
+          }
+        }
+        if (mapStatsDefenseRaw) {
+          try {
+            panel.__mapStatsDefense = JSON.parse(mapStatsDefenseRaw);
+          } catch {
+            panel.__mapStatsDefense = {};
+          }
+        }
+        setupWeaponRoundRates(panel, "overall");
+        setupWeaponRoundRates(panel, "attack");
+        setupWeaponRoundRates(panel, "defense");
       });
     </script>
   </body>

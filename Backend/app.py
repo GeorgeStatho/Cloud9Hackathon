@@ -163,10 +163,80 @@ def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]
         sig_defense = _signature_from_nearsite(nearsite, "percentages_defense")
 
     stats_path = paths_path.with_name(f"{paths_path.stem}_playerstatistics.json")
-    player_stats = {}
+    player_stats: Dict[str, Any] = {}
     if stats_path.exists():
         with open(stats_path, "r", encoding="utf-8") as file_handle:
             player_stats = json.load(file_handle)
+
+    map_kills = int(player_stats.get("kill_count", 0) or 0)
+    map_deaths = int(player_stats.get("death_count", 0) or 0)
+    map_kd = (
+        round(map_kills / map_deaths, 2)
+        if map_deaths
+        else (round(float(map_kills), 2) if map_kills else None)
+    )
+    round_shots = player_stats.get("round_shots", {}) or {}
+    map_headshots, map_bodyshots = _shot_totals_from_round_shots(round_shots)
+    map_shot_total = map_headshots + map_bodyshots
+    map_headshot_rate = (
+        round((map_headshots / map_shot_total) * 100.0, 2) if map_shot_total else None
+    )
+    map_weapon_counts = _weapon_counts_from_round_shots(round_shots)
+    map_top_weapons = _top_n_with_percent(map_weapon_counts, 3)
+
+    # Build per-round weapon rates by aggregating counts across games for the same round key.
+    per_round_weapon_counts: Dict[str, Dict[str, int]] = {}
+    for rounds in round_shots.values():
+        for round_key, round_payload in (rounds or {}).items():
+            weapons = round_payload.get("weapons", {}) or {}
+            bucket = per_round_weapon_counts.setdefault(str(round_key), {})
+            for weapon, count in weapons.items():
+                bucket[weapon] = bucket.get(weapon, 0) + int(count or 0)
+
+    per_round_weapon_rates: Dict[str, List[Dict[str, Any]]] = {}
+    for round_key, weapon_counts in per_round_weapon_counts.items():
+        per_round_weapon_rates[round_key] = _top_n_with_percent(weapon_counts, 5)
+
+    attack_round_shots = _filter_round_shots_by_side(round_shots, "attack")
+    defense_round_shots = _filter_round_shots_by_side(round_shots, "defense")
+
+    attack_headshots, attack_bodyshots = _shot_totals_from_round_shots(attack_round_shots)
+    attack_shot_total = attack_headshots + attack_bodyshots
+    attack_headshot_rate = (
+        round((attack_headshots / attack_shot_total) * 100.0, 2) if attack_shot_total else None
+    )
+    defense_headshots, defense_bodyshots = _shot_totals_from_round_shots(defense_round_shots)
+    defense_shot_total = defense_headshots + defense_bodyshots
+    defense_headshot_rate = (
+        round((defense_headshots / defense_shot_total) * 100.0, 2) if defense_shot_total else None
+    )
+
+    attack_weapon_counts = _weapon_counts_from_round_shots(attack_round_shots)
+    defense_weapon_counts = _weapon_counts_from_round_shots(defense_round_shots)
+    attack_top_weapons = _top_n_with_percent(attack_weapon_counts, 3)
+    defense_top_weapons = _top_n_with_percent(defense_weapon_counts, 3)
+
+    attack_round_weapon_rates: Dict[str, List[Dict[str, Any]]] = {}
+    for rounds in attack_round_shots.values():
+        for round_key, round_payload in (rounds or {}).items():
+            weapons = round_payload.get("weapons", {}) or {}
+            bucket = attack_round_weapon_rates.setdefault(str(round_key), {})
+            for weapon, count in weapons.items():
+                bucket[weapon] = bucket.get(weapon, 0) + int(count or 0)
+    attack_round_weapon_rates = {
+        rk: _top_n_with_percent(counts, 5) for rk, counts in attack_round_weapon_rates.items()
+    }
+
+    defense_round_weapon_rates: Dict[str, List[Dict[str, Any]]] = {}
+    for rounds in defense_round_shots.values():
+        for round_key, round_payload in (rounds or {}).items():
+            weapons = round_payload.get("weapons", {}) or {}
+            bucket = defense_round_weapon_rates.setdefault(str(round_key), {})
+            for weapon, count in weapons.items():
+                bucket[weapon] = bucket.get(weapon, 0) + int(count or 0)
+    defense_round_weapon_rates = {
+        rk: _top_n_with_percent(counts, 5) for rk, counts in defense_round_weapon_rates.items()
+    }
 
     return {
         "overall": stats_overall,
@@ -179,6 +249,24 @@ def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]
         "map_image_rel": _map_image_rel(map_name),
         "nearsite_rel": nearsite_rel,
         "player_stats": player_stats,
+        "map_stats": {
+            "kill_count": map_kills,
+            "death_count": map_deaths,
+            "kd_ratio": map_kd,
+            "headshot_rate": map_headshot_rate,
+            "top_weapons": map_top_weapons,
+            "weapon_rates_by_round": per_round_weapon_rates,
+        },
+        "map_stats_attack": {
+            "headshot_rate": attack_headshot_rate,
+            "top_weapons": attack_top_weapons,
+            "weapon_rates_by_round": attack_round_weapon_rates,
+        },
+        "map_stats_defense": {
+            "headshot_rate": defense_headshot_rate,
+            "top_weapons": defense_top_weapons,
+            "weapon_rates_by_round": defense_round_weapon_rates,
+        },
     }
 
 
@@ -190,6 +278,54 @@ def _top_n_with_percent(counts: Dict[str, int], n: int = 3) -> List[Dict[str, An
         percent = round((count / total) * 100.0, 2) if total else None
         output.append({"name": name, "count": count, "percent": percent})
     return output
+
+
+def _weapon_counts_from_round_shots(round_shots: Dict[str, Any]) -> Dict[str, int]:
+    totals: Dict[str, int] = {}
+    for rounds in round_shots.values():
+        for round_payload in (rounds or {}).values():
+            weapons = round_payload.get("weapons", {}) or {}
+            for weapon, count in weapons.items():
+                totals[weapon] = totals.get(weapon, 0) + int(count or 0)
+    return totals
+
+
+def _shot_totals_from_round_shots(round_shots: Dict[str, Any]) -> Tuple[int, int]:
+    headshots = 0
+    bodyshots = 0
+    for rounds in round_shots.values():
+        for round_payload in (rounds or {}).values():
+            headshots += int(round_payload.get("headshots", 0) or 0)
+            bodyshots += int(round_payload.get("bodyshots", 0) or 0)
+    return headshots, bodyshots
+
+
+def _filter_round_shots_by_round_keys(
+    round_shots: Dict[str, Any],
+    round_keys: set[str],
+) -> Dict[str, Any]:
+    filtered: Dict[str, Any] = {}
+    for game_id, rounds in round_shots.items():
+        for round_key, payload in (rounds or {}).items():
+            if str(round_key) not in round_keys:
+                continue
+            game_bucket = filtered.setdefault(str(game_id), {})
+            game_bucket[str(round_key)] = payload
+    return filtered
+
+
+def _filter_round_shots_by_side(
+    round_shots: Dict[str, Any],
+    side: str,
+) -> Dict[str, Any]:
+    filtered: Dict[str, Any] = {}
+    for game_id, rounds in round_shots.items():
+        for round_key, payload in (rounds or {}).items():
+            if payload.get("side") != side:
+                continue
+            game_bucket = filtered.setdefault(str(game_id), {})
+            game_bucket[str(round_key)] = payload
+    return filtered
 
 
 def _aggregate_player_overall(maps: Dict[str, Any]) -> Dict[str, Any]:
@@ -214,13 +350,11 @@ def _aggregate_player_overall(maps: Dict[str, Any]) -> Dict[str, Any]:
         total_games += int(player_stats.get("games", 0) or 0)
 
         round_shots = player_stats.get("round_shots", {}) or {}
-        for rounds in round_shots.values():
-            for round_payload in (rounds or {}).values():
-                headshots += int(round_payload.get("headshots", 0) or 0)
-                bodyshots += int(round_payload.get("bodyshots", 0) or 0)
-                weapons = round_payload.get("weapons", {}) or {}
-                for weapon, count in weapons.items():
-                    weapon_counts[weapon] = weapon_counts.get(weapon, 0) + int(count or 0)
+        hs, bs = _shot_totals_from_round_shots(round_shots)
+        headshots += hs
+        bodyshots += bs
+        for weapon, count in _weapon_counts_from_round_shots(round_shots).items():
+            weapon_counts[weapon] = weapon_counts.get(weapon, 0) + count
 
     avg_kill_distance = (
         round(sum(kill_distances) / len(kill_distances), 2) if kill_distances else None

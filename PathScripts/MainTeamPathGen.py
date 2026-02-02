@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple
 
@@ -91,38 +93,60 @@ def _maps_from_jsonl(jsonl_path: Path) -> List[str]:
     return maps
 
 
+def _process_series(
+    team_name: str,
+    series_id: str,
+    end_state_path: Path,
+    jsonl_path: Path,
+    seconds_limit: float,
+) -> None:
+    end_state_payload = _load_end_state(end_state_path)
+    players = _players_from_end_state(end_state_payload, team_name)
+    if not players:
+        print(
+            f"[team paths] team={team_name} series={series_id} "
+            "no matching players found in end_state; skipping."
+        )
+        return
+    map_names = _maps_from_end_state(end_state_path)
+    jsonl_maps = _maps_from_jsonl(jsonl_path)
+    map_names = [m for m in map_names if m in jsonl_maps]
+
+    print(
+        f"[team paths] team={team_name} series={series_id} "
+        f"players={len(players)} maps={map_names}"
+    )
+
+    build_team_round_paths_one_pass(
+        jsonl_path=str(jsonl_path),
+        player_names_or_ids=list(players.keys()),
+        seconds_limit=seconds_limit,
+        allowed_maps=map_names,
+        output_root=Path("Data") / team_name.replace(" ", "_") / "Players",
+    )
+
+
 def generateTeamPaths(
     team_name: str,
     seconds_limit: float = 5.0,
 ) -> None:
     # Iterate each series for this team
-    for series_id, end_state_path, jsonl_path in _series_files(team_name):
-        end_state_payload = _load_end_state(end_state_path)
-        players = _players_from_end_state(end_state_payload, team_name)
-        if not players:
-            print(
-                f"[team paths] team={team_name} series={series_id} "
-                "no matching players found in end_state; skipping."
+    series_list = list(_series_files(team_name))
+    max_workers = min(4, os.cpu_count() or 2)
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(
+                _process_series,
+                team_name,
+                series_id,
+                end_state_path,
+                jsonl_path,
+                seconds_limit,
             )
-            continue
-        # Decide which maps to generate for this series
-        map_names = _maps_from_end_state(end_state_path)
-        jsonl_maps = _maps_from_jsonl(jsonl_path)
-        map_names = [m for m in map_names if m in jsonl_maps]
-
-        print(
-            f"[team paths] team={team_name} series={series_id} "
-            f"players={len(players)} maps={map_names}"
-        )
-
-        # ONE PASS per series (level 3 optimization)
-        build_team_round_paths_one_pass(
-            jsonl_path=str(jsonl_path),
-            player_names_or_ids=list(players.keys()),
-            seconds_limit=seconds_limit,
-            allowed_maps=map_names,
-            output_root=Path("Data") / team_name.replace(" ", "_") / "Players",
-        )
+            for series_id, end_state_path, jsonl_path in series_list
+        ]
+        for future in as_completed(futures):
+            future.result()
 
 
 if __name__ == "__main__":
