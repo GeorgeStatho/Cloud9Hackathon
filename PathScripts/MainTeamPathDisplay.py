@@ -11,7 +11,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from PathScripts.MainPlayerPathDisplay import render_player_paths, _infer_map_name
 from PathScripts.DisplayPath import render_team_paths_overlay, render_team_clusters_overlay
-from Map import Map
+from PositionalObjects.Map import Map
 
 
 def _player_paths(team_name: str) -> Iterable[Path]:
@@ -27,15 +27,18 @@ def render_team_paths(team_name: str, side: str = "all") -> None:
     # Render overlays for every player's paths JSON in the team folder.
     team_paths_by_map: dict[str, list[Path]] = {}
     for paths_json in _player_paths(team_name):
-        player_name = paths_json.parent.name
         map_name = _infer_map_name(paths_json)
         team_paths_by_map.setdefault(map_name, []).append(paths_json)
-
+        player_name = paths_json.parent.name
         if side == "both":
             render_player_paths(team_name, player_name, paths_json, side="attack")
             render_player_paths(team_name, player_name, paths_json, side="defense")
         else:
             render_player_paths(team_name, player_name, paths_json, side=side)
+    for paths_json in _player_paths(team_name):
+        player_name = paths_json.parent.name
+        map_name = _infer_map_name(paths_json)
+        team_paths_by_map.setdefault(map_name, []).append(paths_json)
 
     safe_team = team_name.replace(" ", "_")
     team_output_dir = Path("Data") / safe_team / "TeamData"

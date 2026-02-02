@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
+import re
 import zipfile
 
 
@@ -112,48 +113,124 @@ def _is_round_start(event_type: Optional[str]) -> bool:
     return event_type in {"game-started-round", "round-started-freezetime", "round-started"}
 
 
+def _infer_series_id(path: Path) -> Optional[str]:
+    for pattern in (r"events_(\d+)_grid", r"end_state_(\d+)_grid"):
+        match = re.search(pattern, path.stem, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return None
+
+
+def _load_end_state_for_path(input_path: Path) -> Optional[Dict[str, Any]]:
+    if input_path.name.lower().startswith("end_state_") and input_path.suffix.lower() == ".json":
+        with open(input_path, "r", encoding="utf-8") as file_handle:
+            return json.load(file_handle)
+
+    series_id = _infer_series_id(input_path)
+    if not series_id:
+        return None
+    candidate = input_path.parent / f"end_state_{series_id}_grid.json"
+    if candidate.exists():
+        with open(candidate, "r", encoding="utf-8") as file_handle:
+            return json.load(file_handle)
+    return None
+
+
+def _round_number_from_segment(segment: Dict[str, Any], fallback: int) -> int:
+    if segment.get("sequenceNumber") is not None:
+        return int(segment["sequenceNumber"])
+    segment_id = str(segment.get("id") or "")
+    match = re.search(r"round-(\d+)", segment_id, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    return fallback
+
+
+def _parse_rounds_from_end_state(payload: Dict[str, Any]) -> Dict[str, Any]:
+    output: Dict[str, Any] = {"games": {}}
+    series_state = payload.get("seriesState") or {}
+    for game in series_state.get("games", []) or []:
+        game_id = str(game.get("id") or "")
+        if not game_id:
+            continue
+        game_entry = output["games"].setdefault(
+            game_id,
+            {"map": game.get("map", {}).get("name"), "rounds": {}},
+        )
+        round_index = 0
+        for segment in game.get("segments", []) or []:
+            segment_type = str(segment.get("type") or "").lower()
+            segment_id = str(segment.get("id") or "")
+            if segment_type != "round" and not segment_id.lower().startswith("round-"):
+                continue
+            round_index += 1
+            round_number = _round_number_from_segment(segment, round_index)
+            teams = []
+            winner = None
+            for team in segment.get("teams", []) or []:
+                entry = {
+                    "id": team.get("id"),
+                    "name": team.get("name"),
+                    "side": team.get("side"),
+                }
+                teams.append(entry)
+                if team.get("won") is True:
+                    winner = entry
+            game_entry["rounds"][str(round_number)] = {
+                "occurredAt": segment.get("startedAt"),
+                "teams": teams,
+                "winner": winner,
+            }
+    return output
+
+
 def parse_attack_defense_rounds(
     jsonl_path: str,
     output_path: str | None = None,
 ) -> Dict[str, Any]:
-    # Track per-game round counters so each round gets an incrementing index.
-    rounds_by_game: Dict[str, int] = {}
-    output: Dict[str, Any] = {"games": {}}
+    input_path = Path(jsonl_path)
+    end_state_payload = _load_end_state_for_path(input_path)
+    if end_state_payload:
+        output = _parse_rounds_from_end_state(end_state_payload)
+    else:
+        # Track per-game round counters so each round gets an incrementing index.
+        rounds_by_game: Dict[str, int] = {}
+        output = {"games": {}}
 
-    for record in _iter_jsonl_records(jsonl_path):
-        series_id = record.get("seriesId")
-        if series_id and "seriesId" not in output:
-            output["seriesId"] = series_id
+        for record in _iter_jsonl_records(jsonl_path):
+            series_id = record.get("seriesId")
+            if series_id and "seriesId" not in output:
+                output["seriesId"] = series_id
 
-        for event in _iter_events(record):
-            event_type = event.get("type")
-            if not _is_round_start(event_type):
-                continue
+            for event in _iter_events(record):
+                event_type = event.get("type")
+                if not _is_round_start(event_type):
+                    continue
 
-            game = _select_game(event)
-            if not game:
-                continue
+                game = _select_game(event)
+                if not game:
+                    continue
 
-            game_id = str(game.get("id"))
-            if not game_id:
-                continue
+                game_id = str(game.get("id"))
+                if not game_id:
+                    continue
 
-            rounds_by_game[game_id] = rounds_by_game.get(game_id, 0) + 1
-            round_number = rounds_by_game[game_id]
+                rounds_by_game[game_id] = rounds_by_game.get(game_id, 0) + 1
+                round_number = rounds_by_game[game_id]
 
-            game_entry = output["games"].setdefault(
-                game_id,
-                {
-                    "map": game.get("map", {}).get("name"),
-                    "rounds": {},
-                },
-            )
+                game_entry = output["games"].setdefault(
+                    game_id,
+                    {
+                        "map": game.get("map", {}).get("name"),
+                        "rounds": {},
+                    },
+                )
 
-            game_entry["rounds"][str(round_number)] = {
-                "occurredAt": event.get("occurredAt"),
-                "teams": _extract_team_sides(game),
-                "winner": _find_round_winner(game, round_number),
-            }
+                game_entry["rounds"][str(round_number)] = {
+                    "occurredAt": event.get("occurredAt"),
+                    "teams": _extract_team_sides(game),
+                    "winner": _find_round_winner(game, round_number),
+                }
 
     if output_path:
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)

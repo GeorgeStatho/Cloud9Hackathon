@@ -63,4 +63,4 @@ def getTeamSeriesData(teamID:str):
     writeToJSON(stats_result, filename)
     return stats_result
 
-getTeamSeriesData("5")
+

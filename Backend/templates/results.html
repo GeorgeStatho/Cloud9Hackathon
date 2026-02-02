@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ team_name }} - Scouting Report</title>
+    <style>
+      :root {
+        --bg: #0f1a1f;
+        --panel: #17252b;
+        --accent: #f5c542;
+        --muted: #b7c3c9;
+        --text: #e9f0f2;
+      }
+      body {
+        margin: 0;
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top left, #1b2b33, #0f1a1f 60%);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 32px auto;
+        padding: 24px;
+      }
+
+      .back-link {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        text-decoration: none;
+      }
+      .back-link button {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid #2c3d44;
+        background: #0f1a1f;
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .back-link button:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .panel {
+        background: var(--panel);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        margin-bottom: 20px;
+      }
+      h1, h2, h3 {
+        margin: 0 0 12px;
+      }
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .tab {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #0f1a1f;
+        border: 1px solid #2c3d44;
+        color: var(--text);
+        cursor: pointer;
+      }
+      .tab.active {
+        background: var(--accent);
+        color: #222;
+        border-color: transparent;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+      }
+      .card {
+        background: #0f1a1f;
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid #2c3d44;
+      }
+      .path-canvas {
+        display: block;
+        max-width: 520px;
+        height: auto;
+        border: 1px solid #2c3d44;
+        border-radius: 10px;
+        background: #0f1a1f;
+      }
+      .muted {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <a class="back-link" href="/">
+      <button type="button">Back</button>
+    </a>
+    <div class="wrap">
+      <div class="panel">
+        <h1>{{ team_name }} Scouting Report</h1>
+        <div class="tabs" id="playerTabs">
+          {% for player_name in stats.keys() %}
+            <button class="tab" data-player="{{ player_name }}">{{ player_name }}</button>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% for player_name, maps in stats.items() %}
+      <div class="panel player-panel" data-player-panel="{{ player_name }}" style="display:none;">
+        <h2>{{ player_name }}</h2>
+        <div class="tabs map-tabs">
+          {% if "__overall__" in maps %}
+            <button class="tab" data-map="__overall__">Overall</button>
+          {% endif %}
+          {% for map_name in maps.keys() %}
+            {% if map_name != "__overall__" %}
+              <button class="tab" data-map="{{ map_name }}">{{ map_name }}</button>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        {% if "__overall__" in maps %}
+        {% set overall = maps["__overall__"]["overall_player"] %}
+        <div class="map-panel" data-map-panel="__overall__" style="display:none;">
+          <h3>Overall</h3>
+          <div class="grid">
+            <div class="card">
+              <div class="muted">Top agents</div>
+              {% if overall.top_agents %}
+                {% for entry in overall.top_agents %}
+                  <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                {% endfor %}
+              {% else %}
+                <div>N/A</div>
+              {% endif %}
+            </div>
+            <div class="card">
+              <div class="muted">Top weapons</div>
+              {% if overall.top_weapons %}
+                {% for entry in overall.top_weapons %}
+                  <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                {% endfor %}
+              {% else %}
+                <div>N/A</div>
+              {% endif %}
+            </div>
+            <div class="card">
+              <div class="muted">K/D ratio</div>
+              <div>{{ overall.kd_ratio if overall.kd_ratio is not none else "N/A" }}</div>
+            </div>
+            <div class="card">
+              <div class="muted">Headshot rate</div>
+              <div>{{ overall.headshot_rate if overall.headshot_rate is not none else "N/A" }}%</div>
+            </div>
+            <div class="card">
+              <div class="muted">Avg kill distance</div>
+              <div>{{ overall.avg_kill_distance if overall.avg_kill_distance is not none else "N/A" }}</div>
+            </div>
+            <div class="card">
+              <div class="muted">Avg teammate distance</div>
+              <div>{{ overall.avg_teammate_distance if overall.avg_teammate_distance is not none else "N/A" }}</div>
+            </div>
+          </div>
+          <div class="card" style="margin-top:16px;">
+            <h4>Per-map stats</h4>
+            <div class="grid">
+              {% for map_name, summary in maps.items() %}
+                {% if map_name != "__overall__" %}
+                <div class="card">
+                  <div class="muted">{{ map_name }}</div>
+                  <div>K/D: {{ summary.map_stats.kd_ratio if summary.map_stats.kd_ratio is not none else "N/A" }}</div>
+                  <div>Headshot rate: {{ summary.map_stats.headshot_rate if summary.map_stats.headshot_rate is not none else "N/A" }}%</div>
+                  <div>Rounds (Atk/Def): {{ summary.attack.rounds }}/{{ summary.defense.rounds }}</div>
+                  <div>
+                    Avg teammate distance:
+                    {% if summary.player_stats.avg_teammate_distance %}
+                      {{ summary.player_stats.avg_teammate_distance.overall if summary.player_stats.avg_teammate_distance.overall is not none else "N/A" }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </div>
+                  <div class="muted" style="margin-top:6px;">Top weapons</div>
+                  {% if summary.map_stats.top_weapons %}
+                    {% for entry in summary.map_stats.top_weapons %}
+                      <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                    {% endfor %}
+                  {% else %}
+                    <div>N/A</div>
+                  {% endif %}
+                </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% for map_name, summary in maps.items() %}
+        {% if map_name != "__overall__" %}
+        <div
+          class="map-panel"
+          data-map-panel="{{ map_name }}"
+          data-map-name="{{ map_name }}"
+          data-paths-rel="{{ summary.paths_rel }}"
+          data-nearsite-rel="{{ summary.nearsite_rel or '' }}"
+          data-map-image-rel="{{ summary.map_image_rel }}"
+          data-map-stats='{{ summary.map_stats | tojson }}'
+          data-map-stats-attack='{{ summary.map_stats_attack | tojson }}'
+          data-map-stats-defense='{{ summary.map_stats_defense | tojson }}'
+          style="display:none;"
+        >
+          <h3>{{ map_name }}</h3>
+          <div class="card" style="margin-bottom:12px;">
+            <h4>Overall</h4>
+            <label class="muted">Signature zone time (seconds)</label>
+            <input
+              class="signature-slider"
+              data-scope="overall"
+              type="range"
+              min="0"
+              max="120"
+              step="1"
+              value="30"
+              style="width:100%;"
+            />
+            <div class="muted" data-scope="overall" data-role="time-label">t=30s</div>
+            <div class="grid">
+              <div class="card">
+                <div class="muted">Rounds played</div>
+                <div>{{ summary.overall.rounds }}</div>
+                <div class="muted" style="margin-top:6px;">Games played</div>
+                <div>{{ summary.player_stats.games if summary.player_stats.games is not none else "N/A" }}</div>
+              </div>
+              <div class="card">
+                <div class="muted">Avg starting net worth</div>
+                <div>{{ summary.overall.avg_net_worth if summary.overall.avg_net_worth is not none else "N/A" }}</div>
+              </div>
+              <div class="card">
+                <div class="muted">Avg starting loadout value</div>
+                <div>{{ summary.overall.avg_loadout_value if summary.overall.avg_loadout_value is not none else "N/A" }}</div>
+              </div>
+              <div class="card">
+                <div class="muted">Signature zone</div>
+                <div data-scope="overall" data-role="signature-zone-1">{{ summary.signature_zone.zone if summary.signature_zone.zone else "N/A" }}</div>
+                <div class="muted" data-scope="overall" data-role="signature-percent-1">{{ summary.signature_zone.percent if summary.signature_zone.percent is not none else "" }}%</div>
+                <div data-scope="overall" data-role="signature-zone-2">N/A</div>
+                <div class="muted" data-scope="overall" data-role="signature-percent-2"></div>
+                <div data-scope="overall" data-role="signature-zone-3">N/A</div>
+                <div class="muted" data-scope="overall" data-role="signature-percent-3"></div>
+              </div>
+              <div class="card">
+                <div class="muted">Agent usage (by game)</div>
+                {% if summary.player_stats.agent_counts %}
+                  {% for agent, count in summary.player_stats.agent_counts.items() %}
+                    <div>{{ agent }} -- {{ count }}</div>
+                  {% endfor %}
+                {% elif summary.player_stats.game_agents %}
+                  {% for game_id, agent in summary.player_stats.game_agents.items() %}
+                    <div>{{ agent }} -- {{ game_id }}</div>
+                  {% endfor %}
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
+              <div class="card">
+                <div class="muted">Avg kill distance</div>
+                <div>
+                  {% if summary.player_stats.avg_kill_distance is not none %}
+                    {{ summary.player_stats.avg_kill_distance }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </div>
+              </div>
+              <div class="card">
+                <div class="muted">Map K/D ratio</div>
+                <div>{{ summary.map_stats.kd_ratio if summary.map_stats.kd_ratio is not none else "N/A" }}</div>
+                <div class="muted" style="margin-top:6px;">Map headshot rate</div>
+                <div>{{ summary.map_stats.headshot_rate if summary.map_stats.headshot_rate is not none else "N/A" }}%</div>
+                <div class="muted" style="margin-top:6px;">Avg teammate distance</div>
+                <div>
+                  {% if summary.player_stats.avg_teammate_distance %}
+                    {{ summary.player_stats.avg_teammate_distance.overall if summary.player_stats.avg_teammate_distance.overall is not none else "N/A" }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </div>
+                <div class="muted" style="margin-top:6px;">Top weapons</div>
+                {% if summary.map_stats.top_weapons %}
+                  {% for entry in summary.map_stats.top_weapons %}
+                    <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                  {% endfor %}
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
+              <div class="card">
+                <div class="muted">Weapon rate by round</div>
+                {% if summary.map_stats.weapon_rates_by_round %}
+                  <input
+                    class="weapon-round-slider"
+                    data-role="weapon-round-slider"
+                    data-scope="overall"
+                    type="range"
+                    min="1"
+                    max="{{ summary.map_stats.weapon_rates_by_round|length }}"
+                    step="1"
+                    value="1"
+                    style="width:100%;"
+                  />
+                  <div class="muted" data-role="weapon-round-label" data-scope="overall">Round 1</div>
+                  <div class="weapon-round-list" data-role="weapon-round-list" data-scope="overall"></div>
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <h4>Attacker</h4>
+            <label class="muted">Signature zone time (seconds)</label>
+            <input
+              class="signature-slider"
+              data-scope="attack"
+              type="range"
+              min="0"
+              max="120"
+              step="1"
+              value="30"
+              style="width:100%;"
+            />
+            <div class="muted" data-scope="attack" data-role="time-label">t=30s</div>
+            <canvas class="path-canvas" data-scope="attack" style="width:100%; margin-top:10px;"></canvas>
+            <div class="grid">
+              <div class="card">
+                <div class="muted">Rounds played</div>
+                <div>{{ summary.attack.rounds }}</div>
+                <div class="muted" style="margin-top:6px;">Games played</div>
+                <div>{{ summary.player_stats.games if summary.player_stats.games is not none else "N/A" }}</div>
+              </div>
+              <div class="card">
+                <div class="muted">Avg starting net worth</div>
+                <div>{{ summary.attack.avg_net_worth if summary.attack.avg_net_worth is not none else "N/A" }}</div>
+              </div>
+              <div class="card">
+                <div class="muted">Avg starting loadout value</div>
+                <div>{{ summary.attack.avg_loadout_value if summary.attack.avg_loadout_value is not none else "N/A" }}</div>
+              </div>
+              <div class="card">
+                <div class="muted">Spike possession rate</div>
+                <div>{{ summary.attack.spike_rate_attack if summary.attack.spike_rate_attack is not none else "N/A" }}%</div>
+              </div>
+              <div class="card">
+                <div class="muted">Signature zone</div>
+                <div data-scope="attack" data-role="signature-zone-1">{{ summary.signature_zone_attack.zone if summary.signature_zone_attack.zone else "N/A" }}</div>
+                <div class="muted" data-scope="attack" data-role="signature-percent-1">{{ summary.signature_zone_attack.percent if summary.signature_zone_attack.percent is not none else "" }}%</div>
+                <div data-scope="attack" data-role="signature-zone-2">N/A</div>
+                <div class="muted" data-scope="attack" data-role="signature-percent-2"></div>
+                <div data-scope="attack" data-role="signature-zone-3">N/A</div>
+                <div class="muted" data-scope="attack" data-role="signature-percent-3"></div>
+              </div>
+              <div class="card">
+                <div class="muted">Attack headshot rate</div>
+                <div>{{ summary.map_stats_attack.headshot_rate if summary.map_stats_attack.headshot_rate is not none else "N/A" }}%</div>
+                <div class="muted" style="margin-top:6px;">Avg teammate distance</div>
+                <div>
+                  {% if summary.player_stats.avg_teammate_distance %}
+                    {{ summary.player_stats.avg_teammate_distance.attack if summary.player_stats.avg_teammate_distance.attack is not none else "N/A" }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </div>
+                <div class="muted" style="margin-top:6px;">Top weapons (attack)</div>
+                {% if summary.map_stats_attack.top_weapons %}
+                  {% for entry in summary.map_stats_attack.top_weapons %}
+                    <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                  {% endfor %}
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
+              <div class="card">
+                <div class="muted">Weapon rate by round (attack)</div>
+                {% if summary.map_stats_attack.weapon_rates_by_round %}
+                  <input
+                    class="weapon-round-slider"
+                    data-role="weapon-round-slider"
+                    data-scope="attack"
+                    type="range"
+                    min="1"
+                    max="{{ summary.map_stats_attack.weapon_rates_by_round|length }}"
+                    step="1"
+                    value="1"
+                    style="width:100%;"
+                  />
+                  <div class="muted" data-role="weapon-round-label" data-scope="attack">Round 1</div>
+                  <div class="weapon-round-list" data-role="weapon-round-list" data-scope="attack"></div>
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h4>Defender</h4>
+            <label class="muted">Signature zone time (seconds)</label>
+            <input
+              class="signature-slider"
+              data-scope="defense"
+              type="range"
+              min="0"
+              max="120"
+              step="1"
+              value="30"
+              style="width:100%;"
+            />
+            <div class="muted" data-scope="defense" data-role="time-label">t=30s</div>
+            <canvas class="path-canvas" data-scope="defense" style="width:100%; margin-top:10px;"></canvas>
+            <div class="grid">
+              <div class="card">
+                <div class="muted">Rounds played</div>
+                <div>{{ summary.defense.rounds }}</div>
+                <div class="muted" style="margin-top:6px;">Games played</div>
+                <div>{{ summary.player_stats.games if summary.player_stats.games is not none else "N/A" }}</div>
+              </div>
+              <div class="card">
+                <div class="muted">Avg starting net worth</div>
+                <div>{{ summary.defense.avg_net_worth if summary.defense.avg_net_worth is not none else "N/A" }}</div>
+              </div>
+              <div class="card">
+                <div class="muted">Avg starting loadout value</div>
+                <div>{{ summary.defense.avg_loadout_value if summary.defense.avg_loadout_value is not none else "N/A" }}</div>
+              </div>
+              <div class="card">
+                <div class="muted">Signature zone</div>
+                <div data-scope="defense" data-role="signature-zone-1">{{ summary.signature_zone_defense.zone if summary.signature_zone_defense.zone else "N/A" }}</div>
+                <div class="muted" data-scope="defense" data-role="signature-percent-1">{{ summary.signature_zone_defense.percent if summary.signature_zone_defense.percent is not none else "" }}%</div>
+                <div data-scope="defense" data-role="signature-zone-2">N/A</div>
+                <div class="muted" data-scope="defense" data-role="signature-percent-2"></div>
+                <div data-scope="defense" data-role="signature-zone-3">N/A</div>
+                <div class="muted" data-scope="defense" data-role="signature-percent-3"></div>
+              </div>
+              <div class="card">
+                <div class="muted">Defense headshot rate</div>
+                <div>{{ summary.map_stats_defense.headshot_rate if summary.map_stats_defense.headshot_rate is not none else "N/A" }}%</div>
+                <div class="muted" style="margin-top:6px;">Avg teammate distance</div>
+                <div>
+                  {% if summary.player_stats.avg_teammate_distance %}
+                    {{ summary.player_stats.avg_teammate_distance.defense if summary.player_stats.avg_teammate_distance.defense is not none else "N/A" }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </div>
+                <div class="muted" style="margin-top:6px;">Top weapons (defense)</div>
+                {% if summary.map_stats_defense.top_weapons %}
+                  {% for entry in summary.map_stats_defense.top_weapons %}
+                    <div>{{ entry.name }} -- {{ entry.percent if entry.percent is not none else "N/A" }}%</div>
+                  {% endfor %}
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
+              <div class="card">
+                <div class="muted">Weapon rate by round (defense)</div>
+                {% if summary.map_stats_defense.weapon_rates_by_round %}
+                  <input
+                    class="weapon-round-slider"
+                    data-role="weapon-round-slider"
+                    data-scope="defense"
+                    type="range"
+                    min="1"
+                    max="{{ summary.map_stats_defense.weapon_rates_by_round|length }}"
+                    step="1"
+                    value="1"
+                    style="width:100%;"
+                  />
+                  <div class="muted" data-role="weapon-round-label" data-scope="defense">Round 1</div>
+                  <div class="weapon-round-list" data-role="weapon-round-list" data-scope="defense"></div>
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <script>
+      const playerTabs = document.querySelectorAll("#playerTabs .tab");
+      const playerPanels = document.querySelectorAll(".player-panel");
+
+      function showPlayer(name) {
+        playerTabs.forEach((tab) =>
+          tab.classList.toggle("active", tab.dataset.player === name)
+        );
+        playerPanels.forEach((panel) => {
+          panel.style.display = panel.dataset.playerPanel === name ? "block" : "none";
+          const mapTabs = panel.querySelectorAll(".map-tabs .tab");
+          const mapPanels = panel.querySelectorAll(".map-panel");
+          if (panel.style.display === "block" && mapTabs.length) {
+            const firstMap = mapTabs[0].dataset.map;
+            mapTabs.forEach((tab) =>
+              tab.classList.toggle("active", tab.dataset.map === firstMap)
+            );
+            mapPanels.forEach((mp) => {
+              mp.style.display = mp.dataset.mapPanel === firstMap ? "block" : "none";
+            });
+          }
+        });
+      }
+
+      playerTabs.forEach((tab) => {
+        tab.addEventListener("click", () => showPlayer(tab.dataset.player));
+      });
+
+      document.querySelectorAll(".map-tabs").forEach((tabs) => {
+        tabs.addEventListener("click", (e) => {
+          const btn = e.target.closest(".tab");
+          if (!btn) return;
+          const panel = tabs.closest(".player-panel");
+          const mapPanels = panel.querySelectorAll(".map-panel");
+          tabs.querySelectorAll(".tab").forEach((t) =>
+            t.classList.toggle("active", t === btn)
+          );
+          mapPanels.forEach((mp) => {
+            mp.style.display = mp.dataset.mapPanel === btn.dataset.map ? "block" : "none";
+          });
+        });
+      });
+
+      if (playerTabs.length) {
+        showPlayer(playerTabs[0].dataset.player);
+      }
+
+      async function fetchJson(path) {
+        const resp = await fetch(path);
+        if (!resp.ok) return null;
+        return resp.json();
+      }
+
+      function setupCanvas(canvas, image) {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = image.width * dpr;
+        canvas.height = image.height * dpr;
+        canvas.style.height = "auto";
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return ctx;
+      }
+
+      function drawPathsUpTo(ctx, image, rounds, t) {
+        ctx.clearRect(0, 0, image.width, image.height);
+        ctx.drawImage(image, 0, 0);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(245, 197, 66, 0.7)";
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+
+        for (const samples of Object.values(rounds)) {
+          if (!samples || !samples.length) continue;
+          let started = false;
+          ctx.beginPath();
+          for (const sample of samples) {
+            if (sample.t == null || sample.t > t) break;
+            const x = sample.ix ?? null;
+            const y = sample.iy ?? null;
+            if (x == null || y == null) continue;
+            if (!started) {
+              ctx.moveTo(x, y);
+              started = true;
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          if (started) ctx.stroke();
+        }
+      }
+      function closestSample(samples, t) {
+        if (!samples || !samples.length) return null;
+        let best = samples[0];
+        let bestDt = Math.abs((best.t ?? 0) - t);
+        for (let i = 1; i < samples.length; i += 1) {
+          const dt = Math.abs((samples[i].t ?? 0) - t);
+          if (dt < bestDt) {
+            bestDt = dt;
+            best = samples[i];
+          }
+        }
+        return best;
+      }
+
+      function nearestCallout(callouts, gx, gy) {
+        if (!callouts || !callouts.length) return null;
+        let best = null;
+        let bestD2 = null;
+        for (const callout of callouts) {
+          const loc = callout.location || {};
+          if (loc.x == null || loc.y == null) continue;
+          const dx = loc.x - gx;
+          const dy = loc.y - gy;
+          const d2 = dx * dx + dy * dy;
+          if (bestD2 == null || d2 < bestD2) {
+            bestD2 = d2;
+            best = callout;
+          }
+        }
+        return best;
+      }
+
+      function signatureZoneForTime(payload, callouts, t, scope, signatureCache) {
+        if (signatureCache && signatureCache[scope]) {
+          const bucket = signatureCache[scope][String(Math.round(t))] || [];
+          return { top: bucket.slice(0, 3) };
+        }
+        const rounds =
+          scope === "attack"
+            ? payload.attack_rounds || {}
+            : scope === "defense"
+            ? payload.defense_rounds || {}
+            : payload.rounds || {};
+        const timeByZone = {};
+        let totalTime = 0;
+
+        for (const roundId of Object.keys(rounds)) {
+          const samples = rounds[roundId];
+          if (!samples || samples.length < 2) continue;
+
+          for (let i = 0; i < samples.length - 1; i += 1) {
+            const cur = samples[i];
+            const next = samples[i + 1];
+            if (cur.t == null || next.t == null) continue;
+            if (cur.t > t) break;
+
+            const dt = Math.min(next.t, t) - cur.t;
+            if (dt <= 0) continue;
+            if (cur.gx == null || cur.gy == null) continue;
+
+            const callout = nearestCallout(callouts, cur.gx, cur.gy);
+            if (!callout) continue;
+            const key = `${callout.regionName || ""}|${callout.superRegionName || ""}`;
+            timeByZone[key] = (timeByZone[key] || 0) + dt;
+            totalTime += dt;
+          }
+        }
+
+        if (!totalTime) return { top: [] };
+        const ranked = Object.entries(timeByZone)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([zone, value]) => ({
+            zone,
+            percent: totalTime ? Math.round((value / totalTime) * 100) : null,
+          }));
+        return { top: ranked };
+      }
+
+      async function attachSignatureSliders(panel) {
+        const mapName = panel.dataset.mapName;
+        const pathsRel = panel.dataset.pathsRel;
+        const nearsiteRel = panel.dataset.nearsiteRel;
+        const mapImageRel = panel.dataset.mapImageRel;
+        if (!mapName || !pathsRel) return;
+
+        const [pathsPayload, mapPayload, nearsitePayload] = await Promise.all([
+          fetchJson(`/api/file?path=${encodeURIComponent(pathsRel)}`),
+          fetchJson(`/api/map/${encodeURIComponent(mapName)}`),
+          nearsiteRel ? fetchJson(`/api/file?path=${encodeURIComponent(nearsiteRel)}`) : Promise.resolve(null),
+        ]);
+
+        if (!pathsPayload || !mapPayload) return;
+        const callouts = mapPayload.callouts || [];
+        const signatureCache = (nearsitePayload || {}).signature_cache || null;
+
+        let mapImage = null;
+        if (mapImageRel) {
+          mapImage = new Image();
+          mapImage.src = `/files/${mapImageRel}`;
+          await new Promise((resolve) => {
+            mapImage.onload = resolve;
+            mapImage.onerror = resolve;
+          });
+        }
+
+        const sliders = panel.querySelectorAll(".signature-slider");
+        sliders.forEach((slider) => {
+          const scope = slider.dataset.scope;
+          const zoneEls = panel.querySelectorAll(`[data-scope="${scope}"][data-role^="signature-zone-"]`);
+          const percentEls = panel.querySelectorAll(`[data-scope="${scope}"][data-role^="signature-percent-"]`);
+          const timeEl = panel.querySelector(`[data-scope="${scope}"][data-role="time-label"]`);
+          const canvas = panel.querySelector(`.path-canvas[data-scope="${scope}"]`);
+          let ctx = null;
+          if (canvas && mapImage) {
+            ctx = setupCanvas(canvas, mapImage);
+          }
+
+          const update = () => {
+            const t = Number(slider.value);
+            if (timeEl) timeEl.textContent = `t=${t}s`;
+            const sig = signatureZoneForTime(pathsPayload, callouts, t, scope, signatureCache);
+            const top = sig.top || [];
+            zoneEls.forEach((el, idx) => {
+              const entry = top[idx];
+              el.textContent = entry ? entry.zone : "N/A";
+            });
+            percentEls.forEach((el, idx) => {
+              const entry = top[idx];
+              el.textContent = entry && entry.percent != null ? `${entry.percent}%` : "";
+            });
+            if (ctx && mapImage) {
+              const rounds =
+                scope === "attack"
+                  ? pathsPayload.attack_rounds || {}
+                  : scope === "defense"
+                  ? pathsPayload.defense_rounds || {}
+                  : pathsPayload.rounds || {};
+              drawPathsUpTo(ctx, mapImage, rounds, t);
+            }
+          };
+
+          let raf = null;
+          slider.addEventListener("input", () => {
+            if (raf) cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(update);
+          });
+          update();
+        });
+      }
+
+      document.querySelectorAll(".map-panel").forEach((panel) => {
+        attachSignatureSliders(panel);
+      });
+
+      function setupWeaponRoundRates(panel, scope) {
+        const slider = panel.querySelector(`[data-role="weapon-round-slider"][data-scope="${scope}"]`);
+        const label = panel.querySelector(`[data-role="weapon-round-label"][data-scope="${scope}"]`);
+        const list = panel.querySelector(`[data-role="weapon-round-list"][data-scope="${scope}"]`);
+        if (!slider || !label || !list) return;
+
+        const mapStats =
+          scope === "attack"
+            ? (panel.__mapStatsAttack || {})
+            : scope === "defense"
+            ? (panel.__mapStatsDefense || {})
+            : (panel.__mapStats || {});
+        const rates = mapStats.weapon_rates_by_round || {};
+        const roundKeys = Object.keys(rates).sort((a, b) => Number(a) - Number(b));
+        if (!roundKeys.length) {
+          list.textContent = "N/A";
+          return;
+        }
+
+        slider.max = String(roundKeys.length);
+
+        const render = () => {
+          const idx = Math.max(0, Number(slider.value) - 1);
+          const roundKey = roundKeys[idx];
+          label.textContent = `Round ${roundKey}`;
+          const entries = rates[roundKey] || [];
+          if (!entries.length) {
+            list.textContent = "N/A";
+            return;
+          }
+          list.innerHTML = entries
+            .map((entry) => {
+              const pct = entry.percent != null ? `${entry.percent}%` : "N/A";
+              return `<div>${entry.name} -- ${pct}</div>`;
+            })
+            .join("");
+        };
+
+        slider.addEventListener("input", render);
+        render();
+      }
+
+      document.querySelectorAll(".map-panel").forEach((panel) => {
+        const mapStatsRaw = panel.getAttribute("data-map-stats");
+        const mapStatsAttackRaw = panel.getAttribute("data-map-stats-attack");
+        const mapStatsDefenseRaw = panel.getAttribute("data-map-stats-defense");
+        if (mapStatsRaw) {
+          try {
+            panel.__mapStats = JSON.parse(mapStatsRaw);
+          } catch {
+            panel.__mapStats = {};
+          }
+        }
+        if (mapStatsAttackRaw) {
+          try {
+            panel.__mapStatsAttack = JSON.parse(mapStatsAttackRaw);
+          } catch {
+            panel.__mapStatsAttack = {};
+          }
+        }
+        if (mapStatsDefenseRaw) {
+          try {
+            panel.__mapStatsDefense = JSON.parse(mapStatsDefenseRaw);
+          } catch {
+            panel.__mapStatsDefense = {};
+          }
+        }
+        setupWeaponRoundRates(panel, "overall");
+        setupWeaponRoundRates(panel, "attack");
+        setupWeaponRoundRates(panel, "defense");
+      });
+    </script>
+  </body>
+</html>

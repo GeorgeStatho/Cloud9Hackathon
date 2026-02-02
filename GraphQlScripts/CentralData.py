@@ -1,18 +1,33 @@
-from BasicFunctionalities import *
+from GraphQlScripts.BasicFunctionalities import *
+import datetime
+import os
 
-from Keys import API_KEY
+from GraphQlScripts import Keys
 API_URL = "https://api-op.grid.gg/central-data/graphql"
 STATS_URL="https://api-op.grid.gg/stats-feed/graphql"
 GAME_ID = "6" #Valorant game ID. Don't want LOL Data
 
-transport = RequestsHTTPTransport(
-    url=API_URL,
-    headers={"x-api-key": API_KEY},
-    verify=True,
-    retries=2,
-)
+_LAST_CLIENT_KEY: str | None = None
+_LAST_CLIENT: Client | None = None
 
-client = Client(transport=transport, fetch_schema_from_transport=True)
+
+def _get_client() -> Client:
+    global _LAST_CLIENT, _LAST_CLIENT_KEY
+    api_key = Keys.API_KEY or os.environ.get("GRID_API_KEY", "")
+    if not api_key:
+        raise ValueError("GRID API key is not set. Provide it via Keys.setkey() or GRID_API_KEY.")
+    if _LAST_CLIENT and _LAST_CLIENT_KEY == api_key:
+        return _LAST_CLIENT
+    transport = RequestsHTTPTransport(
+        url=API_URL,
+        headers={"x-api-key": api_key},
+        verify=True,
+        retries=2,
+    )
+    client = Client(transport=transport, fetch_schema_from_transport=False)
+    _LAST_CLIENT = client
+    _LAST_CLIENT_KEY = api_key
+    return client
 
 
 def getTeams() -> Dict[str, Any]:
@@ -53,7 +68,7 @@ def getTeams() -> Dict[str, Any]:
         }
         """
     )
-    result = client.execute(query)
+    result = _get_client().execute(query)
     writeToJSON(result, "teamData.json")
     return result
 
@@ -77,7 +92,7 @@ def getTeamId(team_name:str)-> Dict[str,Any]:
         "titleId": GAME_ID,
         "name": {"contains": team_name},
     }
-    lookup_result = client.execute(team_lookup, variable_values={"teamFilter": team_filter})
+    lookup_result = _get_client().execute(team_lookup, variable_values={"teamFilter": team_filter})
     edges = lookup_result.get("teams", {}).get("edges", [])
     if not edges:
         raise ValueError(f"No team found matching '{team_name}' for title {GAME_ID}.")
@@ -116,9 +131,9 @@ def getTeamPlayers(team_name: str) -> Dict[str, Any]:
         "titleId": GAME_ID,
         "teamIdFilter": {"id": team_id},
     }
-    roster_result = client.execute(roster_query, variable_values={"playerFilter": player_filter})
+    roster_result = _get_client().execute(roster_query, variable_values={"playerFilter": player_filter})
     filename = f"{team_name}_players.json".replace(" ", "_")
-    writeToJSON(roster_result, filename)
+    #writeToJSON(roster_result, filename)
     return roster_result
 
 
@@ -158,7 +173,7 @@ def getPlayer(playerName: str, operator: str = "contains") -> Dict[str, Any]:
         }
         """
     )
-    result = client.execute(query, variable_values={"playerFilter": player_filter})
+    result = _get_client().execute(query, variable_values={"playerFilter": player_filter})
     writeToJSON(result, "PlayerData.json")
     return result
 
@@ -180,7 +195,7 @@ def getPlayerInfo(player_id: str) -> Dict[str, Any]:
         }
         """
     )
-    result = client.execute(query, variable_values={"playerId": player_id})
+    result = _get_client().execute(query, variable_values={"playerId": player_id})
     player = result.get("player")
     if not player:
         raise ValueError(f"No player found with ID '{player_id}'.")
@@ -189,27 +204,72 @@ def getPlayerInfo(player_id: str) -> Dict[str, Any]:
     writeToJSON(result, filename)
     return result
 
-def getTeamSeries(teamID:str)->Dict[str,Any]:
+def getTeamSeries(teamID: str) -> Dict[str, Any]:
+    now_utc = datetime.datetime.utcnow()
+    current_day = now_utc.replace(microsecond=0).isoformat() + "Z"
+    one_year_ago = (now_utc - datetime.timedelta(days=365)).replace(microsecond=0).isoformat() + "Z"
     query = gql(
         """
-        query Series($teamID: ID!) {
-          allSeries(filter: { teamIds: { in: [$teamID] } }) {
-           totalCount
-           edges {
-               node {
-                   id
-                   }
-               }
+        query Series($teamID: ID!, $after: String, $currentDay: String!, $oneYearAgo: String!) {
+          allSeries(
+            filter: {
+              teamIds: { in: [$teamID] }
+              startTimeScheduled: { gte: $oneYearAgo, lte: $currentDay }
+            }
+            first: 50
+            after: $after
+          ) {
+            totalCount
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+            edges {
+              node {
+                id
               }
-            }"""
+            }
+          }
+        }
+        """
     )
-    result = client.execute(query, variable_values={"teamID": teamID})
-    series = result.get("allSeries")
-    if not series:
-        raise ValueError(f"No series found for team ID '{teamID}'.")
-    filename = f"{teamID}_series.json".replace(" ", "_")
-    writeToJSON(result, filename)
-    return result
+    all_edges: list = []
+    total_count: int | None = None
+    has_next = True
+    cursor = None
+    while has_next:
+        result = _get_client().execute(
+            query,
+            variable_values={
+                "teamID": teamID,
+                "after": cursor,
+                "currentDay": current_day,
+                "oneYearAgo": one_year_ago,
+            },
+        )
+        series = result.get("allSeries")
+        if not series:
+            raise ValueError(f"No series found for team ID '{teamID}'.")
+        if total_count is None:
+            total_count = series.get("totalCount")
+        page_info = series.get("pageInfo", {}) or {}
+        all_edges.extend(series.get("edges", []) or [])
+        has_next = bool(page_info.get("hasNextPage"))
+        cursor = page_info.get("endCursor")
+        if not cursor and has_next:
+            break
 
-if __name__ == "__main__":
-    print(getTeamSeries("97"))
+    merged = {
+        "allSeries": {
+            "totalCount": total_count if total_count is not None else len(all_edges),
+            "pageInfo": {
+                "endCursor": cursor,
+                "hasNextPage": has_next,
+            },
+            "edges": all_edges,
+        }
+    }
+    filename = f"{teamID}_series.json".replace(" ", "_")
+    #writeToJSON(merged, filename)
+    return merged
+

@@ -1,126 +1,20 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, Tuple
-import zipfile
+from typing import Any, Dict, Optional, Tuple
 
-from Player import Player
-from Map import Map
+from PositionalObjects.Player import Player
+from PositionalObjects.Map import Map
+from PositionalObjects.GeneratorState import MapState, PlayerRoundState
 from AttackDefenseParser import parse_attack_defense_rounds
-
+from PositionalObjects.JsonlEventReader import JsonlEventReader
 print("USING PathGenerator:", __file__)
 
 # Normalize GRID timestamps into timezone-aware datetime objects for consistent math.
 def _parse_time(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
-
-
-# Yield each event entry from a JSONL record to keep the main loop simple.
-def _iter_events(record: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
-    record_time = record.get("occurredAt")
-    for event in record.get("events", []):
-        if record_time and "occurredAt" not in event:
-            event["occurredAt"] = record_time
-        yield event
-
-
-
-# Check whether a player's inventory contains the spike (or bomb).
-def _player_has_spike(player: Dict[str, Any]) -> bool:
-    inventory = player.get("inventory", {}) or {}
-    items = inventory.get("items", []) or []
-    for item in items:
-        item_id = str(item.get("id", "")).lower()
-        item_name = str(item.get("name", "")).lower()
-        if "spike" in item_id or "spike" in item_name:
-            return True
-        if "bomb" in item_id or "bomb" in item_name:
-            return True
-    return False
-
-
-# Locate a player's position and stat snapshot inside any known event state payloads.
-def _find_player_snapshot(
-    event: Dict[str, Any],
-    player_key: str,
-) -> Optional[Dict[str, Any]]:
-    candidates = [
-        event.get("seriesState"),
-        event.get("seriesStateDelta"),
-        event.get("actor", {}).get("state"),
-        event.get("actor", {}).get("stateDelta"),
-        event.get("target", {}).get("state"),
-        event.get("target", {}).get("stateDelta"),
-    ]
-    # Walk all possible state containers to find the requested player's position.
-    for state in candidates:
-        if not state:
-            continue
-        for game in state.get("games", []) or []:
-            for team in game.get("teams", []) or []:
-                for player in team.get("players", []) or []:
-                    pid = str(player.get("id", ""))
-                    pname = (player.get("name") or player.get("nickname") or "").lower()
-                    # Match by ID or by lowercased name.
-                    if player_key == pid or player_key == pname:
-                        pos = player.get("position")
-                        # Only return when x/y are present to avoid corrupt samples.
-                        if pos and pos.get("x") is not None and pos.get("y") is not None:
-                            net_worth = player.get("netWorth")
-                            loadout_value = player.get("loadoutValue")
-                            return {
-                                "gx": float(pos["x"]),
-                                "gy": float(pos["y"]),
-                                "net_worth": float(net_worth) if net_worth is not None else None,
-                                "loadout_value": float(loadout_value) if loadout_value is not None else None,
-                                "has_spike": _player_has_spike(player),
-                            }
-    return None
-
-
-# Locate the active map name from any available event state payloads.
-def _find_map_name(event: Dict[str, Any]) -> Optional[str]:
-    candidates = [
-        event.get("seriesState"),
-        event.get("seriesStateDelta"),
-        event.get("actor", {}).get("state"),
-        event.get("actor", {}).get("stateDelta"),
-        event.get("target", {}).get("state"),
-        event.get("target", {}).get("stateDelta"),
-    ]
-    for state in candidates:
-        if not state:
-            continue
-        for game in state.get("games", []) or []:
-            map_name = game.get("map", {}).get("name")
-            if map_name:
-                return str(map_name)
-    return None
-
-
-# Build per-round movement paths for a player within a fixed time window (default 5s).
-def _iter_jsonl_records(jsonl_path: str) -> Iterable[Dict[str, Any]]:
-    path = Path(jsonl_path)
-    if path.suffix.lower() == ".zip":
-        with zipfile.ZipFile(path, "r") as zip_handle:
-            jsonl_names = [name for name in zip_handle.namelist() if name.endswith(".jsonl")]
-            if not jsonl_names:
-                raise FileNotFoundError(f"No .jsonl file found inside {jsonl_path}")
-            with zip_handle.open(jsonl_names[0], "r") as file_handle:
-                for raw_line in file_handle:
-                    line = raw_line.decode("utf-8").strip()
-                    if not line:
-                        continue
-                    yield json.loads(line)
-        return
-    with open(jsonl_path, "r", encoding="utf-8") as file_handle:
-        for line in file_handle:
-            line = line.strip()
-            if not line:
-                continue
-            yield json.loads(line)
 
 
 def _resolve_map_json(map_name: str) -> Optional[Path]:
@@ -141,104 +35,9 @@ def _resolve_map_json(map_name: str) -> Optional[Path]:
     return None
 
 
-def _process_event(
-    event: Dict[str, Any],
-    player: Player,
-    player_key: str,
-    round_id: int,
-    round_start: Optional[datetime],
-    seconds_limit: float,
-) -> Tuple[int, Optional[datetime]]:
-    event_type = event.get("type")
-    occurred_at = event.get("occurredAt")
-    if not occurred_at:
-        return round_id, round_start
-    event_time = _parse_time(occurred_at)
-
-    if event_type in {"game-started-round", "round-started-freezetime", "round-started"}:
-        round_id += 1
-        round_start = event_time
-        player.start_round(round_id)
-
-    if round_start is None:
-        return round_id, round_start
-
-    elapsed = (event_time - round_start).total_seconds()
-    if elapsed < 0:
-        return round_id, round_start
-
-    snapshot = _find_player_snapshot(event, player_key)
-    if snapshot:
-        player.record_position(
-            round_id,
-            elapsed,
-            snapshot["gx"],
-            snapshot["gy"],
-            max_time=seconds_limit,
-            net_worth=snapshot.get("net_worth"),
-            loadout_value=snapshot.get("loadout_value"),
-            has_spike=snapshot.get("has_spike"),
-        )
-
-    return round_id, round_start
-
-
 def _is_round_start(event_type: Optional[str]) -> bool:
     # Identify events that begin a new round and reset the round timer.
     return event_type in {"game-started-round", "round-started-freezetime", "round-started"}
-
-
-def _find_player_team_id(event: Dict[str, Any], player_key: str) -> Tuple[Optional[str], Optional[str]]:
-    # Find the player's team (and game id) from any available state payload.
-    candidates = [
-        event.get("seriesState"),
-        event.get("seriesStateDelta"),
-        event.get("actor", {}).get("state"),
-        event.get("actor", {}).get("stateDelta"),
-        event.get("target", {}).get("state"),
-        event.get("target", {}).get("stateDelta"),
-    ]
-    for state in candidates:
-        if not state:
-            continue
-        for game in state.get("games", []) or []:
-            game_id = game.get("id")
-            for team in game.get("teams", []) or []:
-                for player in team.get("players", []) or []:
-                    pid = str(player.get("id", ""))
-                    pname = (player.get("name") or player.get("nickname") or "").lower()
-                    if player_key == pid or player_key == pname:
-                        return str(team.get("id")) if team.get("id") is not None else None, (
-                            str(game_id) if game_id is not None else None
-                        )
-    return None, None
-
-
-def _find_player_agent(event: Dict[str, Any], player_key: str) -> Tuple[Optional[str], Optional[str]]:
-    # Find the player's agent/character name and game id from any available state payload.
-    candidates = [
-        event.get("seriesState"),
-        event.get("seriesStateDelta"),
-        event.get("actor", {}).get("state"),
-        event.get("actor", {}).get("stateDelta"),
-        event.get("target", {}).get("state"),
-        event.get("target", {}).get("stateDelta"),
-    ]
-    for state in candidates:
-        if not state:
-            continue
-        for game in state.get("games", []) or []:
-            game_id = game.get("id")
-            for team in game.get("teams", []) or []:
-                for player in team.get("players", []) or []:
-                    pid = str(player.get("id", ""))
-                    pname = (player.get("name") or player.get("nickname") or "").lower()
-                    if player_key == pid or player_key == pname:
-                        character = player.get("character", {}) or {}
-                        agent = character.get("name") or character.get("id")
-                        if agent:
-                            return str(agent), (str(game_id) if game_id is not None else None)
-    return None, None
 
 
 def _lookup_player_side(
@@ -267,17 +66,15 @@ def _build_output(
     map_info: Optional[Map],
     seconds_limit: float,
     map_name: Optional[str],
-    game_agents: Optional[Dict[str, str]] = None,
+    round_game_ids: Optional[Dict[int, str]] = None,
 ) -> Dict[str, Any]:
     output: Dict[str, Any] = {
         "player": player.name,
         "seconds_limit": seconds_limit,
         "map": map_name,
         "rounds": {},
+        "game_rounds": {},
     }
-    if game_agents:
-        output["game_agents"] = game_agents
-        output["agents"] = [game_agents[key] for key in sorted(game_agents.keys())]
 
     for rid, path in player.paths.items():
         samples = []
@@ -295,6 +92,10 @@ def _build_output(
                 entry["iy"] = iy
             samples.append(entry)
         output["rounds"][str(rid)] = samples
+        if round_game_ids is not None:
+            game_id = round_game_ids.get(rid)
+            if game_id:
+                output["game_rounds"].setdefault(str(game_id), {})[str(rid)] = samples
 
     return output
 
@@ -345,37 +146,26 @@ def _map_matches_filter(active_map: Optional[str], normalized_filter: str) -> bo
 
 def _ensure_map_state(
     active_map: str,
-    map_states: Dict[str, Dict[str, Any]],
+    map_states: Dict[str, MapState],
     map_cache: Dict[str, Optional[Map]],
     player_id_or_name: str,
-) -> Dict[str, Any]:
+) -> PlayerRoundState:
     # Lazily create per-map tracking state and cache map conversion data.
     if active_map not in map_states:
         map_json = _resolve_map_json(active_map)
         map_obj = Map.from_map_json(str(map_json)) if map_json else None
         map_cache[active_map] = map_obj
-        map_states[active_map] = {
-            "map_obj": map_obj,
-            "player_all": Player(player_id=player_id_or_name, name=player_id_or_name),
-            "player_attack": Player(player_id=player_id_or_name, name=player_id_or_name),
-            "player_defense": Player(player_id=player_id_or_name, name=player_id_or_name),
-            "round_id": 0,
-            "round_in_game": 0,
-            "round_start": None,
-            "player_team_id": None,
-            "game_id": None,
-            "current_side": None,
-            "game_agents": {},
-        }
-    return map_states[active_map]
+        map_states[active_map] = MapState(map_name=active_map, map_obj=map_obj)
 
+    return map_states[active_map].get_player_state(player_id_or_name, player_id_or_name)
 
 def _process_event_for_player(
     event: Dict[str, Any],
-    state: Dict[str, Any],
+    state: PlayerRoundState,
     player_key: str,
     seconds_limit: float,
     side_data: Dict[str, Any],
+    reader: JsonlEventReader,
 ) -> None:
     event_type = event.get("type")
     occurred_at = event.get("occurredAt")
@@ -385,42 +175,42 @@ def _process_event_for_player(
 
     if _is_round_start(event_type):
         # bump global round id (unique across whole run)
-        state["round_id"] += 1
-        state["round_start"] = event_time
+        state.round_id += 1
+        state.round_start = event_time
 
-        state["player_all"].start_round(state["round_id"])
-        state["player_attack"].start_round(state["round_id"])
-        state["player_defense"].start_round(state["round_id"])
+        state.player_all.start_round(state.round_id)
+        state.player_attack.start_round(state.round_id)
+        state.player_defense.start_round(state.round_id)
 
-        team_id, new_game_id = _find_player_team_id(event, player_key)
+        team_id, new_game_id = reader.find_player_team_id(event, player_key)
         if team_id:
-            state["player_team_id"] = team_id
+            state.player_team_id = team_id
 
         # reset per-game round counter on new game
-        if new_game_id and new_game_id != state.get("game_id"):
-            state["game_id"] = new_game_id
-            state["round_in_game"] = 0
-            agent_name, agent_game_id = _find_player_agent(event, player_key)
-            if agent_name and agent_game_id:
-                state["game_agents"][str(agent_game_id)] = agent_name
+        if new_game_id and new_game_id != state.game_id:
+            state.game_id = new_game_id
+            state.round_in_game = 0
 
-        state["round_in_game"] += 1
+        state.round_in_game += 1
 
-        state["current_side"] = _lookup_player_side(
+        state.current_side = _lookup_player_side(
             side_data,
-            state["game_id"],
-            state["round_in_game"],
-            state["player_team_id"],
+            state.game_id,
+            state.round_in_game,
+            state.player_team_id,
         )
+        if state.game_id:
+            state.round_game_id_by_round[state.round_id] = state.game_id
+            state.round_in_game_by_round[state.round_id] = state.round_in_game
 
-    if state["round_start"] is None:
+    if state.round_start is None:
         return
 
-    elapsed = (event_time - state["round_start"]).total_seconds()
+    elapsed = (event_time - state.round_start).total_seconds()
     if elapsed < 0:
         return
 
-    snapshot = _find_player_snapshot(event, player_key)
+    snapshot = reader.find_player_snapshot(event, player_key)
     if not snapshot:
         return
 
@@ -438,7 +228,7 @@ def _process_event_for_player(
 
     # Soft clamp if game_to_image lands slightly outside bounds.
     # This avoids deleting good edge points because of rounding / slight transform mismatch.
-    map_obj = state.get("map_obj")
+    map_obj = state.map_obj
     if map_obj is not None:
         ix, iy = map_obj.game_to_image(gx, gy)
 
@@ -455,11 +245,11 @@ def _process_event_for_player(
         # Clamping should be done in DisplayPath after conversion if needed.
 
     # Always record "all"
-    side = (state["current_side"] or "").lower()
+    side = (state.current_side or "").lower()
     has_spike = snapshot.get("has_spike") if side in {"attacker", "attack", "attacking"} else None
 
-    state["player_all"].record_position(
-        state["round_id"],
+    state.player_all.record_position(
+        state.round_id,
         elapsed,
         gx,
         gy,
@@ -470,8 +260,8 @@ def _process_event_for_player(
     )
 
     if side in {"attacker", "attack", "attacking"}:
-        state["player_attack"].record_position(
-            state["round_id"],
+        state.player_attack.record_position(
+            state.round_id,
             elapsed,
             gx,
             gy,
@@ -481,8 +271,8 @@ def _process_event_for_player(
             has_spike=has_spike,
         )
     elif side in {"defender", "defense", "defending"}:
-        state["player_defense"].record_position(
-            state["round_id"],
+        state.player_defense.record_position(
+            state.round_id,
             elapsed,
             gx,
             gy,
@@ -493,34 +283,49 @@ def _process_event_for_player(
         )
 
 def _finalize_outputs(
-    map_states: Dict[str, Dict[str, Any]],
+    map_states: Dict[str, MapState],
     map_cache: Dict[str, Optional[Map]],
     seconds_limit: float,
+    output_root: Optional[Path] = None,
 ) -> Dict[str, Any]:
-    # Build JSON outputs per map and write them to PlayerData/<player>/<map>/.
+    # Build JSON outputs per map and write them to output_root/<player>/<map>/.
+    if output_root is None:
+        output_root = Path("PlayerData")
     outputs: Dict[str, Any] = {}
-    for map_name, state in map_states.items():
+    for map_name, map_state in map_states.items():
         map_obj = map_cache.get(map_name)
-        output = _build_output(
-            state["player_all"],
-            map_obj,
-            seconds_limit,
-            map_name,
-            game_agents=state.get("game_agents"),
-        )
-        output["attack_rounds"] = _build_output(
-            state["player_attack"], map_obj, seconds_limit, map_name
-        )["rounds"]
-        output["defense_rounds"] = _build_output(
-            state["player_defense"], map_obj, seconds_limit, map_name
-        )["rounds"]
-        outputs[map_name] = output
+        outputs[map_name] = {}
+        for player_state in map_state.players.values():
+            output = _build_output(
+                player_state.player_all,
+                map_obj,
+                seconds_limit,
+                map_name,
+                round_game_ids=player_state.round_game_id_by_round,
+            )
+            attack_output = _build_output(
+                player_state.player_attack,
+                map_obj,
+                seconds_limit,
+                map_name,
+                round_game_ids=player_state.round_game_id_by_round,
+            )
+            defense_output = _build_output(
+                player_state.player_defense,
+                map_obj,
+                seconds_limit,
+                map_name,
+                round_game_ids=player_state.round_game_id_by_round,
+            )
+            output["attack_rounds"] = attack_output["rounds"]
+            output["defense_rounds"] = defense_output["rounds"]
+            output["attack_game_rounds"] = attack_output["game_rounds"]
+            output["defense_game_rounds"] = defense_output["game_rounds"]
+            outputs[map_name][player_state.player_all.name] = output
 
-        filename = f"{state['player_all'].name}_paths.json"
-        output_path_obj = (
-            Path("PlayerData") / state["player_all"].name / map_name / filename
-        )
-        _write_output(output_path_obj, output)
+            filename = f"{player_state.player_all.name}_paths.json"
+            output_path_obj = output_root / player_state.player_all.name / map_name / filename
+            _write_output(output_path_obj, output)
 
     return outputs
 
@@ -537,50 +342,68 @@ def _dump_seen_maps(
         json.dump(seen_maps, out_handle, indent=2, ensure_ascii=False)
 
 
-def build_player_round_paths(
+def build_team_round_paths_one_pass(
     jsonl_path: str,
-    player_id_or_name: str,
-    map_name: str,
+    player_names_or_ids: list[str],
     seconds_limit: float = 5.0,
+    allowed_maps: Optional[list[str]] = None,
     debug_map_dump: Optional[Path] = None,
+    output_root: Optional[Path] = None,
 ) -> Dict[str, Any]:
     side_data = parse_attack_defense_rounds(jsonl_path)
-    player_key = player_id_or_name.lower()
-    normalized_filter = map_name.lower()
-    map_states: Dict[str, Dict[str, Any]] = {}
+    reader = JsonlEventReader(jsonl_path)
+
+    wanted = {p.lower() for p in player_names_or_ids}
+    allowed = {m.lower() for m in allowed_maps} if allowed_maps else None
+
+    map_states: Dict[str, MapState] = {}
     map_cache: Dict[str, Optional[Map]] = {}
+
     current_map_name: Optional[str] = None
     game_ended = False
     seen_maps: Dict[str, int] = {}
 
-    for record in _iter_jsonl_records(jsonl_path):
-        for event in _iter_events(record):
-            # Check for end-of-game events so map switching only happens after a game finishes.
+    for record in reader.iter_records():
+        for event in reader.iter_events(record):
             event_type = event.get("type")
             if _should_mark_game_end(event_type):
                 game_ended = True
 
             # Detect the map from the current event and keep a running count for debugging.
-            detected_map = _find_map_name(event)
+            detected_map = reader.find_map_name(event)
             _track_seen_map(detected_map, seen_maps)
             current_map_name, game_ended = _update_current_map(
                 detected_map, current_map_name, game_ended
             )
 
-            # Choose the active map and skip events that do not match the requested map filter.
             active_map = _select_active_map(detected_map, current_map_name)
-            if not _map_matches_filter(active_map, normalized_filter):
+            if not active_map:
                 continue
 
-            # Ensure per-map tracking state exists, then update round/path data for this event.
-            state = _ensure_map_state(
-                active_map,
-                map_states,
-                map_cache,
-                player_id_or_name,
-            )
-            _process_event_for_player(event, state, player_key, seconds_limit, side_data)
+            active_map_l = active_map.lower()
+            if allowed is not None and active_map_l not in allowed:
+                continue
 
-    outputs = _finalize_outputs(map_states, map_cache, seconds_limit)
+            # 🔑 Extract ALL players in one pass
+            snapshots = reader.extract_player_snapshots(event, wanted)
+
+            for player_key, ctx in snapshots.items():
+                state = _ensure_map_state(
+                    active_map_l,
+                    map_states,
+                    map_cache,
+                    player_key,
+                )
+
+                _process_event_for_player(
+                    event,
+                    state,
+                    player_key,
+                    seconds_limit,
+                    side_data,
+                    reader,
+                )
+
+    outputs = _finalize_outputs(map_states, map_cache, seconds_limit, output_root=output_root)
     _dump_seen_maps(debug_map_dump, seen_maps)
     return outputs

@@ -8,7 +8,9 @@ from typing import Dict, Iterable, List, Tuple
 from array import array
 from PIL import Image, ImageDraw, ImageFilter
 
-from Map import Map
+from PositionalObjects.Map import Map
+from PositionalObjects.Path import Path as PlayerPath
+from PositionalObjects.Position import Position
 
 
 # Read the paths JSON file and return the round->samples mapping.
@@ -19,10 +21,47 @@ def _load_paths(
     with open(paths_json_path, "r", encoding="utf-8") as file_handle:
         payload = json.load(file_handle)
     if side == "attack":
+        game_rounds = payload.get("attack_game_rounds")
+        if game_rounds:
+            return _flatten_game_rounds(game_rounds)
         return payload.get("attack_rounds", {})
     if side == "defense":
+        game_rounds = payload.get("defense_game_rounds")
+        if game_rounds:
+            return _flatten_game_rounds(game_rounds)
         return payload.get("defense_rounds", {})
+    game_rounds = payload.get("game_rounds")
+    if game_rounds:
+        return _flatten_game_rounds(game_rounds)
     return payload.get("rounds", {})
+
+
+def _flatten_game_rounds(
+    game_rounds: Dict[str, Dict[str, List[Dict[str, float]]]],
+) -> Dict[str, List[Dict[str, float]]]:
+    merged: Dict[str, List[Dict[str, float]]] = {}
+    for game_id, rounds in (game_rounds or {}).items():
+        for round_id, samples in (rounds or {}).items():
+            merged[f"{game_id}-{round_id}"] = samples
+    return merged
+
+
+def _load_paths_as_objects(
+    paths_json_path: str,
+    side: str,
+    max_samples: int = 2000,
+    sample_hz: int = 30,
+) -> Dict[str, PlayerPath]:
+    rounds = _load_paths(paths_json_path, side)
+    return {
+        round_id: PlayerPath.from_json_samples(
+            samples,
+            max_samples=max_samples,
+            sample_hz=sample_hz,
+            enable_downsample=False,
+        )
+        for round_id, samples in rounds.items()
+    }
 
 
 def _merge_rounds(paths_json_paths: List[str], side: str) -> Dict[str, List[Dict[str, float]]]:
@@ -38,9 +77,18 @@ def _merge_rounds(paths_json_paths: List[str], side: str) -> Dict[str, List[Dict
 
 # Yield (x, y) points in image space, converting from game coords if needed.
 def _iter_round_points(
-    round_data: List[Dict[str, float]],
+    round_data: List[Dict[str, float]] | PlayerPath,
     map_info: Map | None,
 ) -> Iterable[Tuple[float, float]]:
+    if isinstance(round_data, PlayerPath):
+        for sample in round_data:
+            if isinstance(sample, Position):
+                ix, iy = (
+                    sample.to_image(map_info) if map_info is not None else (sample.gx, sample.gy)
+                )
+                yield float(ix), float(iy)
+        return
+
     for sample in round_data:
         if "ix" in sample and "iy" in sample:
             yield float(sample["ix"]), float(sample["iy"])
@@ -383,8 +431,8 @@ def render_paths_overlay(
     line_width: int = 3,
     side: str = "all",
 ) -> None:
-    # Load per-round path samples from JSON.
-    rounds = _load_paths(paths_json_path, side)
+    # Load per-round path samples from JSON into Path objects.
+    rounds = _load_paths_as_objects(paths_json_path, side)
     if not rounds:
         raise ValueError("No round data found in the paths JSON file.")
 

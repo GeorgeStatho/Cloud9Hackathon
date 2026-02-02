@@ -11,8 +11,8 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from PathScripts.NearSite import _ability_event_index
-from PathScripts.NearSitePlayerSeries import generate_player_nearsite_series
+from PathScripts.PlayerStatisticsPlayerSeries import generate_player_statistics_for_player
+from PathScripts.PlayerStatisticsParser import compute_team_player_event_stats
 from PathScripts.SeriesRoster import collect_team_players
 
 
@@ -25,25 +25,20 @@ def _load_team_players(team_name: str) -> Dict[str, str]:
     return players
 
 
-def generate_team_nearsite_series(
-    team_name: str,
-    time_seconds: float,
-    side: str = "all",
-) -> None:
+def generate_team_player_statistics(team_name: str) -> None:
     players = _load_team_players(team_name)
-    # Build ability cache once before spawning workers.
-    _ability_event_index(team_name)
+    event_stats = compute_team_player_event_stats(team_name)
     max_workers = min(8, os.cpu_count() or 4)
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = [
             executor.submit(
-                generate_player_nearsite_series,
-                team_name=team_name,
-                player_name=player_name,
-                time_seconds=time_seconds,
-                side=side,
+                generate_player_statistics_for_player,
+                team_name,
+                player_name,
+                player_id,
+                event_stats,
             )
-            for player_name in players.keys()
+            for player_name, player_id in players.items()
         ]
         for future in as_completed(futures):
             future.result()
@@ -53,16 +48,9 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Compute nearest callouts for all team members across all maps."
+        description="Build per-map player statistics (agent per game) for all team members."
     )
     parser.add_argument("team", help="Team name (matches Data/<Team> folder).")
-    parser.add_argument("time", type=float, help="Time in seconds from round start.")
-    parser.add_argument(
-        "--side",
-        choices=["all", "attack", "defense"],
-        default="all",
-        help="Which side's rounds to analyze (default: all).",
-    )
     args = parser.parse_args()
 
-    generate_team_nearsite_series(args.team, args.time, side=args.side)
+    generate_team_player_statistics(args.team)
