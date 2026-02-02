@@ -80,11 +80,37 @@
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 12px;
       }
+      .table-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
       .card {
         background: #0f1a1f;
         border-radius: 12px;
         padding: 12px;
         border: 1px solid #2c3d44;
+      }
+      .stats-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.92rem;
+      }
+      .stats-table th,
+      .stats-table td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid #2c3d44;
+      }
+      .stats-table th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .stats-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+      .stats-table .muted {
+        font-size: 0.85rem;
       }
       .path-canvas {
         display: block;
@@ -93,6 +119,36 @@
         border: 1px solid #2c3d44;
         border-radius: 10px;
         background: #0f1a1f;
+      }
+      .team-overlay {
+        display: grid;
+        grid-template-columns: minmax(260px, 1fr) minmax(200px, 260px);
+        gap: 16px;
+        align-items: start;
+      }
+      .team-path-canvas {
+        width: 100%;
+        max-width: 520px;
+        height: auto;
+        border: 1px solid #2c3d44;
+        border-radius: 10px;
+        background: #0f1a1f;
+      }
+      .legend-list {
+        display: grid;
+        gap: 8px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+      }
+      .legend-swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        border: 1px solid #2c3d44;
       }
       .muted {
         color: var(--muted);
@@ -107,10 +163,259 @@
       <div class="panel">
         <h1>{{ team_name }} Scouting Report</h1>
         <div class="tabs" id="playerTabs">
+          <button class="tab" data-player="__team__">Team Overview</button>
           {% for player_name in stats.keys() %}
             <button class="tab" data-player="{{ player_name }}">{{ player_name }}</button>
           {% endfor %}
         </div>
+      </div>
+
+      <div class="panel player-panel" data-player-panel="__team__" style="display:none;">
+        <h2>Team Overview</h2>
+        <div class="tabs map-tabs">
+          <button class="tab" data-map="__overall__">Overall</button>
+          {% for map_name in team_stats.map_names %}
+            <button class="tab" data-map="{{ map_name }}">{{ map_name }}</button>
+          {% endfor %}
+        </div>
+
+        <div class="map-panel" data-map-panel="__overall__" style="display:none;">
+          <h3>Overall</h3>
+          <div class="table-grid">
+            <div class="card">
+              <h4>Overall</h4>
+              <table class="stats-table">
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>K/D</th>
+                    <th>Headshot %</th>
+                    <th>Avg kill distance</th>
+                    <th>Avg teammate distance</th>
+                    <th>Total games</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if team_stats.overall %}
+                    {% for player in team_stats.overall %}
+                    <tr>
+                      <td>{{ player.name }}</td>
+                      <td>{{ player.overall.kd_ratio if player.overall.kd_ratio is not none else "N/A" }}</td>
+                      <td>{{ player.overall.headshot_rate if player.overall.headshot_rate is not none else "N/A" }}%</td>
+                      <td>{{ player.overall.avg_kill_distance if player.overall.avg_kill_distance is not none else "N/A" }}</td>
+                      <td>{{ player.overall.avg_teammate_distance if player.overall.avg_teammate_distance is not none else "N/A" }}</td>
+                      <td>{{ player.overall.total_games if player.overall.total_games is not none else "N/A" }}</td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr><td colspan="6" class="muted">No team summary found.</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h4>Attack</h4>
+              <table class="stats-table">
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Rounds</th>
+                    <th>Avg net worth</th>
+                    <th>Avg loadout value</th>
+                    <th>Headshot %</th>
+                    <th>Avg teammate distance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if team_stats.overall %}
+                    {% for player in team_stats.overall %}
+                    <tr>
+                      <td>{{ player.name }}</td>
+                      <td>{{ player.attack.rounds if player.attack.rounds is not none else "N/A" }}</td>
+                      <td>{{ player.attack.avg_net_worth if player.attack.avg_net_worth is not none else "N/A" }}</td>
+                      <td>{{ player.attack.avg_loadout_value if player.attack.avg_loadout_value is not none else "N/A" }}</td>
+                      <td>{{ player.attack.headshot_rate if player.attack.headshot_rate is not none else "N/A" }}%</td>
+                      <td>{{ player.attack.avg_teammate_distance if player.attack.avg_teammate_distance is not none else "N/A" }}</td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr><td colspan="6" class="muted">No team summary found.</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h4>Defense</h4>
+              <table class="stats-table">
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Rounds</th>
+                    <th>Avg net worth</th>
+                    <th>Avg loadout value</th>
+                    <th>Headshot %</th>
+                    <th>Avg teammate distance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if team_stats.overall %}
+                    {% for player in team_stats.overall %}
+                    <tr>
+                      <td>{{ player.name }}</td>
+                      <td>{{ player.defense.rounds if player.defense.rounds is not none else "N/A" }}</td>
+                      <td>{{ player.defense.avg_net_worth if player.defense.avg_net_worth is not none else "N/A" }}</td>
+                      <td>{{ player.defense.avg_loadout_value if player.defense.avg_loadout_value is not none else "N/A" }}</td>
+                      <td>{{ player.defense.headshot_rate if player.defense.headshot_rate is not none else "N/A" }}%</td>
+                      <td>{{ player.defense.avg_teammate_distance if player.defense.avg_teammate_distance is not none else "N/A" }}</td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr><td colspan="6" class="muted">No team summary found.</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {% for map_name in team_stats.map_names %}
+        {% set map_entry = team_stats.maps[map_name] %}
+        <div
+          class="map-panel"
+          data-map-panel="{{ map_name }}"
+          data-map-name="{{ map_name }}"
+          data-map-image-rel="{{ map_entry.map_image_rel }}"
+          data-team-paths='{{ map_entry.paths | tojson }}'
+          style="display:none;"
+        >
+          <h3>{{ map_name }}</h3>
+          <div class="card" style="margin-bottom:16px;">
+            <h4>Team path overlay</h4>
+            <div class="team-overlay">
+              <canvas class="team-path-canvas" data-role="team-path-canvas"></canvas>
+              <div>
+                <div class="muted" style="margin-bottom:6px;">Player key</div>
+                <div class="legend-list" data-role="team-path-legend"></div>
+              </div>
+            </div>
+          </div>
+          <div class="table-grid">
+            <div class="card">
+              <h4>Overall</h4>
+              <table class="stats-table">
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Rounds</th>
+                    <th>K/D</th>
+                    <th>Headshot %</th>
+                    <th>Avg net worth</th>
+                    <th>Avg loadout value</th>
+                    <th>Avg teammate distance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if map_entry.players %}
+                    {% for entry in map_entry.players %}
+                    <tr>
+                      <td>{{ entry.name }}</td>
+                      <td>{{ entry.summary.overall.rounds if entry.summary.overall.rounds is not none else "N/A" }}</td>
+                      <td>{{ entry.summary.map_stats.kd_ratio if entry.summary.map_stats.kd_ratio is not none else "N/A" }}</td>
+                      <td>{{ entry.summary.map_stats.headshot_rate if entry.summary.map_stats.headshot_rate is not none else "N/A" }}%</td>
+                      <td>{{ entry.summary.overall.avg_net_worth if entry.summary.overall.avg_net_worth is not none else "N/A" }}</td>
+                      <td>{{ entry.summary.overall.avg_loadout_value if entry.summary.overall.avg_loadout_value is not none else "N/A" }}</td>
+                      <td>
+                        {% if entry.summary.player_stats.avg_teammate_distance %}
+                          {{ entry.summary.player_stats.avg_teammate_distance.overall if entry.summary.player_stats.avg_teammate_distance.overall is not none else "N/A" }}
+                        {% else %}
+                          N/A
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr><td colspan="7" class="muted">No player map data found.</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h4>Attack</h4>
+              <table class="stats-table">
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Rounds</th>
+                    <th>Avg net worth</th>
+                    <th>Avg loadout value</th>
+                    <th>Headshot %</th>
+                    <th>Avg teammate distance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if map_entry.players %}
+                    {% for entry in map_entry.players %}
+                    <tr>
+                      <td>{{ entry.name }}</td>
+                      <td>{{ entry.summary.attack.rounds if entry.summary.attack.rounds is not none else "N/A" }}</td>
+                      <td>{{ entry.summary.attack.avg_net_worth if entry.summary.attack.avg_net_worth is not none else "N/A" }}</td>
+                      <td>{{ entry.summary.attack.avg_loadout_value if entry.summary.attack.avg_loadout_value is not none else "N/A" }}</td>
+                      <td>{{ entry.summary.map_stats_attack.headshot_rate if entry.summary.map_stats_attack.headshot_rate is not none else "N/A" }}%</td>
+                      <td>
+                        {% if entry.summary.player_stats.avg_teammate_distance %}
+                          {{ entry.summary.player_stats.avg_teammate_distance.attack if entry.summary.player_stats.avg_teammate_distance.attack is not none else "N/A" }}
+                        {% else %}
+                          N/A
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr><td colspan="6" class="muted">No player map data found.</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h4>Defense</h4>
+              <table class="stats-table">
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Rounds</th>
+                    <th>Avg net worth</th>
+                    <th>Avg loadout value</th>
+                    <th>Headshot %</th>
+                    <th>Avg teammate distance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if map_entry.players %}
+                    {% for entry in map_entry.players %}
+                    <tr>
+                      <td>{{ entry.name }}</td>
+                      <td>{{ entry.summary.defense.rounds if entry.summary.defense.rounds is not none else "N/A" }}</td>
+                      <td>{{ entry.summary.defense.avg_net_worth if entry.summary.defense.avg_net_worth is not none else "N/A" }}</td>
+                      <td>{{ entry.summary.defense.avg_loadout_value if entry.summary.defense.avg_loadout_value is not none else "N/A" }}</td>
+                      <td>{{ entry.summary.map_stats_defense.headshot_rate if entry.summary.map_stats_defense.headshot_rate is not none else "N/A" }}%</td>
+                      <td>
+                        {% if entry.summary.player_stats.avg_teammate_distance %}
+                          {{ entry.summary.player_stats.avg_teammate_distance.defense if entry.summary.player_stats.avg_teammate_distance.defense is not none else "N/A" }}
+                        {% else %}
+                          N/A
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr><td colspan="6" class="muted">No player map data found.</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
       </div>
 
       {% for player_name, maps in stats.items() %}
@@ -589,6 +894,32 @@
           if (started) ctx.stroke();
         }
       }
+
+      function drawTeamPaths(ctx, image, rounds, color) {
+        if (!rounds) return;
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = color;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+
+        for (const samples of Object.values(rounds)) {
+          if (!samples || !samples.length) continue;
+          let started = false;
+          ctx.beginPath();
+          for (const sample of samples) {
+            const x = sample.ix ?? null;
+            const y = sample.iy ?? null;
+            if (x == null || y == null) continue;
+            if (!started) {
+              ctx.moveTo(x, y);
+              started = true;
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          if (started) ctx.stroke();
+        }
+      }
       function closestSample(samples, t) {
         if (!samples || !samples.length) return null;
         let best = samples[0];
@@ -742,6 +1073,79 @@
 
       document.querySelectorAll(".map-panel").forEach((panel) => {
         attachSignatureSliders(panel);
+      });
+
+      const teamPathPalette = [
+        "#f5c542",
+        "#4cc9f0",
+        "#f28482",
+        "#90be6d",
+        "#a78bfa",
+        "#f97316",
+        "#2dd4bf",
+        "#e879f9",
+        "#60a5fa",
+        "#facc15",
+      ];
+
+      async function attachTeamOverlay(panel) {
+        const teamPathsRaw = panel.getAttribute("data-team-paths");
+        const mapImageRel = panel.dataset.mapImageRel;
+        const canvas = panel.querySelector('[data-role="team-path-canvas"]');
+        const legend = panel.querySelector('[data-role="team-path-legend"]');
+        if (!teamPathsRaw || !mapImageRel || !canvas || !legend) return;
+
+        let teamPaths = [];
+        try {
+          teamPaths = JSON.parse(teamPathsRaw);
+        } catch {
+          teamPaths = [];
+        }
+        if (!teamPaths.length) return;
+
+        const mapImage = new Image();
+        mapImage.src = `/files/${mapImageRel}`;
+        await new Promise((resolve) => {
+          mapImage.onload = resolve;
+          mapImage.onerror = resolve;
+        });
+        if (!mapImage.width || !mapImage.height) return;
+
+        const ctx = setupCanvas(canvas, mapImage);
+        ctx.clearRect(0, 0, mapImage.width, mapImage.height);
+        ctx.drawImage(mapImage, 0, 0);
+
+        const payloads = await Promise.all(
+          teamPaths.map((entry) =>
+            entry.paths_rel
+              ? fetchJson(`/api/file?path=${encodeURIComponent(entry.paths_rel)}`)
+              : Promise.resolve(null)
+          )
+        );
+
+        legend.innerHTML = "";
+        teamPaths.forEach((entry, idx) => {
+          const color = teamPathPalette[idx % teamPathPalette.length];
+          const item = document.createElement("div");
+          item.className = "legend-item";
+          const swatch = document.createElement("span");
+          swatch.className = "legend-swatch";
+          swatch.style.background = color;
+          const label = document.createElement("span");
+          label.textContent = entry.name || `Player ${idx + 1}`;
+          item.appendChild(swatch);
+          item.appendChild(label);
+          legend.appendChild(item);
+
+          const payload = payloads[idx];
+          if (!payload) return;
+          const rounds = payload.rounds || {};
+          drawTeamPaths(ctx, mapImage, rounds, `${color}b3`);
+        });
+      }
+
+      document.querySelectorAll(".map-panel[data-team-paths]").forEach((panel) => {
+        attachTeamOverlay(panel);
       });
 
       function setupWeaponRoundRates(panel, scope) {
