@@ -1,11 +1,21 @@
 from __future__ import annotations
 
 import json
+import os
 import math
 import sys
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 import threading
+
+
+def _atomic_json_dump(path, payload) -> None:
+    path = Path(path) if not isinstance(path, Path) else path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(path.suffix + '.tmp')
+    with open(tmp_path, 'w', encoding='utf-8') as out_handle:
+        json.dump(payload, out_handle, indent=2, ensure_ascii=False)
+    os.replace(tmp_path, path)
 
 from PositionalObjects.JsonlEventReader import JsonlEventReader
 from PathScripts.SeriesRoster import collect_team_players
@@ -290,15 +300,7 @@ def _build_ability_index(team_name: str) -> Dict[str, Any]:
                 )
 
     cache_path = _ability_cache_path(team_name)
-    temp_path = cache_path.with_suffix(cache_path.suffix + ".tmp")
-    with open(temp_path, "w", encoding="utf-8") as file_handle:
-        json.dump(
-            {"version": 2, "sources": sources, "index": index},
-            file_handle,
-            indent=2,
-            ensure_ascii=False,
-        )
-    temp_path.replace(cache_path)
+    _atomic_json_dump(cache_path, {"version": 2, "sources": sources, "index": index})
     return index
 
 

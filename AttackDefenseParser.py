@@ -1,11 +1,21 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 import re
 import zipfile
 
+
+
+def _atomic_json_dump(path, payload) -> None:
+    path = Path(path) if not isinstance(path, Path) else path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(path.suffix + '.tmp')
+    with open(tmp_path, 'w', encoding='utf-8') as out_handle:
+        json.dump(payload, out_handle, indent=2, ensure_ascii=False)
+    os.replace(tmp_path, path)
 
 # Yield each record from a JSONL file as a parsed dict.
 def _iter_jsonl_records(jsonl_path: str) -> Iterable[Dict[str, Any]]:
@@ -234,8 +244,7 @@ def parse_attack_defense_rounds(
 
     if output_path:
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w", encoding="utf-8") as file_handle:
-            json.dump(output, file_handle, indent=2, ensure_ascii=False)
+        _atomic_json_dump(output_path, output)
 
     return output
 

@@ -13,6 +13,20 @@ from PathScripts.MainPlayerPathDisplay import render_player_paths, _infer_map_na
 from PathScripts.DisplayPath import render_team_paths_overlay, render_team_clusters_overlay, render_paths_json
 from PositionalObjects.Map import Map
 
+def _cleanup_tmp_files(root: Path) -> None:
+    if not root.exists():
+        return
+    for tmp_path in root.rglob('*.tmp'):
+        try:
+            tmp_path.unlink()
+        except OSError:
+            pass
+    for lock_path in root.rglob('*.lock'):
+        try:
+            lock_path.unlink()
+        except OSError:
+            pass
+
 
 def _player_paths(team_name: str) -> Iterable[Path]:
     # Yield all <Player>_<map>_paths.json files under Data/<Team>/Players.
@@ -25,6 +39,8 @@ def _player_paths(team_name: str) -> Iterable[Path]:
 
 def render_team_paths(team_name: str, side: str = "all") -> None:
     # Render overlays for every player's paths JSON in the team folder.
+    team_players_root = Path('Data') / team_name.replace(' ', '_') / 'Players'
+    _cleanup_tmp_files(team_players_root)
     team_paths_by_map: dict[str, list[Path]] = {}
     map_cache: dict[str, Map] = {}
     for paths_json in _player_paths(team_name):

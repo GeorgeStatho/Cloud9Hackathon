@@ -26,6 +26,14 @@ _log_queue: "queue.Queue[str]" = queue.Queue()
 _run_lock = threading.Lock()
 
 
+def _drain_log_queue() -> None:
+    try:
+        while True:
+            _log_queue.get_nowait()
+    except queue.Empty:
+        pass
+
+
 def _collect_files(team_name: str) -> dict:
     safe_team = team_name.replace(" ", "_")
     team_dir = ROOT_DIR / "Data" / safe_team
@@ -70,6 +78,16 @@ def _safe_repo_path(root: Path, rel: str) -> Path:
     if not str(p).startswith(str(root)):
         raise ValueError("Invalid path.")
     return p
+
+
+def _load_json_file(path: Path) -> Any:
+    raw = path.read_text(encoding='utf-8')
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        decoder = json.JSONDecoder()
+        obj, _ = decoder.raw_decode(raw.lstrip())
+        return obj
 
 
 def _map_callouts(map_name: str) -> List[Dict[str, Any]]:
@@ -194,8 +212,7 @@ def _build_tendencies(
 
 
 def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]:
-    with open(paths_path, "r", encoding="utf-8") as file_handle:
-        payload = json.load(file_handle)
+    payload = _load_json_file(paths_path)
 
     rounds = payload.get("rounds", {}) or {}
     attack_rounds = payload.get("attack_rounds", {}) or {}
@@ -930,6 +947,7 @@ def index():
 @app.route("/api/run", methods=["POST"])
 def api_run():
     body = request.get_json(silent=True) or {}
+    _drain_log_queue()
     api_key = (body.get("api_key") or "").strip()
     team_name = (body.get("team_name") or "").strip()
     seconds_limit = float(body.get("seconds_limit", 120.0) or 120.0)
@@ -984,8 +1002,7 @@ def api_file():
         abort(404)
     if p.suffix.lower() not in (".json", ".jsonl"):
         abort(400)
-    with open(p, "r", encoding="utf-8") as file_handle:
-        payload = json.load(file_handle)
+    payload = _load_json_file(p)
     return jsonify(payload)
 
 

@@ -1,11 +1,21 @@
 from __future__ import annotations
 
 import sys
+import os
 from pathlib import Path
 from typing import Dict, Iterable, Optional, List, Tuple
 import json
 import bisect
 import math
+
+def _atomic_json_dump(path, payload) -> None:
+    path = Path(path) if not isinstance(path, Path) else path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(path.suffix + '.tmp')
+    with open(tmp_path, 'w', encoding='utf-8') as out_handle:
+        json.dump(payload, out_handle, indent=2, ensure_ascii=False)
+    os.replace(tmp_path, path)
+
 # Allow running as a script from the repo root by ensuring the root is on sys.path.
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
@@ -268,8 +278,7 @@ def generate_player_statistics_for_player(
         }
 
         output_path = paths_json.with_name(f"{paths_json.stem}_playerstatistics.json")
-        with open(output_path, "w", encoding="utf-8") as file_handle:
-            json.dump(stats, file_handle, indent=2, ensure_ascii=False)
+        _atomic_json_dump(output_path, stats)
         outputs[map_name] = output_path
     return outputs
 
