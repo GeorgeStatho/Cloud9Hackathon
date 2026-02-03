@@ -90,11 +90,19 @@
         border-radius: 12px;
         padding: 12px;
         border: 1px solid #2c3d44;
+        overflow-x: auto;
+        overflow-y: hidden;
       }
       .stats-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.92rem;
+        table-layout: fixed;
+        min-width: 520px;
+      }
+      .stats-table th,
+      .stats-table td {
+        word-break: break-word;
       }
       .stats-table th,
       .stats-table td {
@@ -275,6 +283,33 @@
                 </tbody>
               </table>
             </div>
+            <div class="card">
+              <h4>Team tendencies</h4>
+              <div class="muted">Overall</div>
+              {% if team_stats.team_tendencies.overall %}
+                {% for item in team_stats.team_tendencies.overall %}
+                  <div>• {{ item }}</div>
+                {% endfor %}
+              {% else %}
+                <div>N/A</div>
+              {% endif %}
+              <div class="muted" style="margin-top:8px;">Attack</div>
+              {% if team_stats.team_tendencies.attack %}
+                {% for item in team_stats.team_tendencies.attack %}
+                  <div>• {{ item }}</div>
+                {% endfor %}
+              {% else %}
+                <div>N/A</div>
+              {% endif %}
+              <div class="muted" style="margin-top:8px;">Defense</div>
+              {% if team_stats.team_tendencies.defense %}
+                {% for item in team_stats.team_tendencies.defense %}
+                  <div>• {{ item }}</div>
+                {% endfor %}
+              {% else %}
+                <div>N/A</div>
+              {% endif %}
+            </div>
           </div>
         </div>
 
@@ -291,6 +326,17 @@
           <h3>{{ map_name }}</h3>
           <div class="card" style="margin-bottom:16px;">
             <h4>Team path overlay</h4>
+            <label class="muted">Time (seconds)</label>
+            <input
+              class="team-time-slider"
+              type="range"
+              min="0"
+              max="120"
+              step="1"
+              value="30"
+              style="width:100%;"
+            />
+            <div class="muted" data-role="team-time-label">t=30s</div>
             <div class="team-overlay">
               <canvas class="team-path-canvas" data-role="team-path-canvas"></canvas>
               <div>
@@ -413,6 +459,33 @@
                 </tbody>
               </table>
             </div>
+            <div class="card">
+              <h4>Team tendencies</h4>
+              <div class="muted">Overall</div>
+              {% if team_stats.team_tendencies_by_map[map_name].overall %}
+                {% for item in team_stats.team_tendencies_by_map[map_name].overall %}
+                  <div>• {{ item }}</div>
+                {% endfor %}
+              {% else %}
+                <div>N/A</div>
+              {% endif %}
+              <div class="muted" style="margin-top:8px;">Attack</div>
+              {% if team_stats.team_tendencies_by_map[map_name].attack %}
+                {% for item in team_stats.team_tendencies_by_map[map_name].attack %}
+                  <div>• {{ item }}</div>
+                {% endfor %}
+              {% else %}
+                <div>N/A</div>
+              {% endif %}
+              <div class="muted" style="margin-top:8px;">Defense</div>
+              {% if team_stats.team_tendencies_by_map[map_name].defense %}
+                {% for item in team_stats.team_tendencies_by_map[map_name].defense %}
+                  <div>• {{ item }}</div>
+                {% endfor %}
+              {% else %}
+                <div>N/A</div>
+              {% endif %}
+            </div>
           </div>
         </div>
         {% endfor %}
@@ -526,19 +599,17 @@
           <h3>{{ map_name }}</h3>
           <div class="card" style="margin-bottom:12px;">
             <h4>Overall</h4>
-            <label class="muted">Signature zone time (seconds)</label>
-            <input
-              class="signature-slider"
-              data-scope="overall"
-              type="range"
-              min="0"
-              max="120"
-              step="1"
-              value="30"
-              style="width:100%;"
-            />
-            <div class="muted" data-scope="overall" data-role="time-label">t=30s</div>
             <div class="grid">
+              <div class="card">
+                <div class="muted">Tendencies</div>
+                {% if summary.tendencies.overall %}
+                  {% for item in summary.tendencies.overall %}
+                    <div>• {{ item }}</div>
+                  {% endfor %}
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
               <div class="card">
                 <div class="muted">Rounds played</div>
                 <div>{{ summary.overall.rounds }}</div>
@@ -555,6 +626,18 @@
               </div>
               <div class="card">
                 <div class="muted">Signature zone</div>
+                <label class="muted">Signature zone time (seconds)</label>
+                <input
+                  class="signature-slider"
+                  data-scope="overall"
+                  type="range"
+                  min="0"
+                  max="120"
+                  step="1"
+                  value="30"
+                  style="width:100%;"
+                />
+                <div class="muted" data-scope="overall" data-role="time-label">t=30s</div>
                 <div data-scope="overall" data-role="signature-zone-1">{{ summary.signature_zone.zone if summary.signature_zone.zone else "N/A" }}</div>
                 <div class="muted" data-scope="overall" data-role="signature-percent-1">{{ summary.signature_zone.percent if summary.signature_zone.percent is not none else "" }}%</div>
                 <div data-scope="overall" data-role="signature-zone-2">N/A</div>
@@ -648,6 +731,16 @@
             <canvas class="path-canvas" data-scope="attack" style="width:100%; margin-top:10px;"></canvas>
             <div class="grid">
               <div class="card">
+                <div class="muted">Tendencies</div>
+                {% if summary.tendencies.attack %}
+                  {% for item in summary.tendencies.attack %}
+                    <div>• {{ item }}</div>
+                  {% endfor %}
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
+              <div class="card">
                 <div class="muted">Rounds played</div>
                 <div>{{ summary.attack.rounds }}</div>
                 <div class="muted" style="margin-top:6px;">Games played</div>
@@ -733,6 +826,16 @@
             <div class="muted" data-scope="defense" data-role="time-label">t=30s</div>
             <canvas class="path-canvas" data-scope="defense" style="width:100%; margin-top:10px;"></canvas>
             <div class="grid">
+              <div class="card">
+                <div class="muted">Tendencies</div>
+                {% if summary.tendencies.defense %}
+                  {% for item in summary.tendencies.defense %}
+                    <div>• {{ item }}</div>
+                  {% endfor %}
+                {% else %}
+                  <div>N/A</div>
+                {% endif %}
+              </div>
               <div class="card">
                 <div class="muted">Rounds played</div>
                 <div>{{ summary.defense.rounds }}</div>
@@ -933,6 +1036,39 @@
           if (started) ctx.stroke();
         }
       }
+
+      function drawTeamPathsUpTo(ctx, image, rounds, t, color) {
+        if (!rounds) return;
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = color;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+
+        for (const samples of Object.values(rounds)) {
+          if (!samples || !samples.length) continue;
+          let started = false;
+          ctx.beginPath();
+          for (const sample of samples) {
+            if (sample.t == null || sample.t > t) break;
+            const x =
+              sample.nx != null
+                ? sample.nx * image.width
+                : sample.ix ?? null;
+            const y =
+              sample.ny != null
+                ? sample.ny * image.height
+                : sample.iy ?? null;
+            if (x == null || y == null) continue;
+            if (!started) {
+              ctx.moveTo(x, y);
+              started = true;
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          if (started) ctx.stroke();
+        }
+      }
       function closestSample(samples, t) {
         if (!samples || !samples.length) return null;
         let best = samples[0];
@@ -1113,6 +1249,8 @@
         const mapImageRel = panel.dataset.mapImageRel;
         const canvas = panel.querySelector('[data-role="team-path-canvas"]');
         const legend = panel.querySelector('[data-role="team-path-legend"]');
+        const slider = panel.querySelector(".team-time-slider");
+        const timeLabel = panel.querySelector('[data-role="team-time-label"]');
         if (!teamPathsRaw || !mapImageRel || !canvas || !legend) return;
 
         let teamPaths = [];
@@ -1132,8 +1270,6 @@
         if (!mapImage.width || !mapImage.height) return;
 
         const ctx = setupCanvas(canvas, mapImage);
-        ctx.clearRect(0, 0, mapImage.width, mapImage.height);
-        ctx.drawImage(mapImage, 0, 0);
 
         const payloads = await Promise.all(
           teamPaths.map((entry) =>
@@ -1158,12 +1294,30 @@
           item.appendChild(swatch);
           item.appendChild(label);
           legend.appendChild(item);
-
-          const payload = payloads[idx];
-          if (!payload) return;
-          const rounds = payload.rounds || {};
-          drawTeamPaths(ctx, mapImage, rounds, `${color}b3`);
         });
+
+        const render = () => {
+          const t = slider ? Number(slider.value) : 120;
+          if (timeLabel) timeLabel.textContent = `t=${t}s`;
+          ctx.clearRect(0, 0, mapImage.width, mapImage.height);
+          ctx.drawImage(mapImage, 0, 0);
+          teamPaths.forEach((entry, idx) => {
+            const payload = payloads[idx];
+            if (!payload) return;
+            const rounds = payload.rounds || {};
+            const color = `${teamPathPalette[idx % teamPathPalette.length]}b3`;
+            drawTeamPathsUpTo(ctx, mapImage, rounds, t, color);
+          });
+        };
+
+        if (slider) {
+          let raf = null;
+          slider.addEventListener("input", () => {
+            if (raf) cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(render);
+          });
+        }
+        render();
       }
 
       document.querySelectorAll(".map-panel[data-team-paths]").forEach((panel) => {

@@ -147,6 +147,52 @@ def _spike_rate_attack(attack_rounds: Dict[str, List[Dict[str, Any]]]) -> Option
     return round((spike_rounds / total) * 100.0, 2)
 
 
+def _build_tendencies(
+    *,
+    rounds: int,
+    signature: Dict[str, Any],
+    avg_teammate_distance: Optional[float],
+    spike_rate: Optional[float],
+    headshot_rate: Optional[float],
+    avg_kill_distance: Optional[float],
+    top_weapon: Optional[Dict[str, Any]],
+    side: str,
+) -> List[str]:
+    tendencies: List[str] = []
+    if rounds <= 0:
+        return tendencies
+
+    zone = signature.get("zone")
+    percent = signature.get("percent")
+    if zone and percent is not None and percent >= 45:
+        tendencies.append(f"{side} signature zone: {zone} ({percent}%).")
+
+    # teammate spacing tendency is applied later using team-relative thresholds
+
+    if spike_rate is not None and spike_rate >= 35:
+        tendencies.append(f"Often carries spike ({spike_rate}%).")
+
+    if headshot_rate is not None:
+        if headshot_rate >= 30:
+            tendencies.append(f"High headshot rate ({headshot_rate}%).")
+        elif headshot_rate <= 15:
+            tendencies.append(f"Low headshot rate ({headshot_rate}%).")
+
+    if avg_kill_distance is not None:
+        if avg_kill_distance < 900:
+            tendencies.append("Takes short-range fights.")
+        elif avg_kill_distance > 1600:
+            tendencies.append("Takes long-range fights.")
+
+    if top_weapon and top_weapon.get("percent") is not None:
+        if top_weapon["percent"] >= 40:
+            tendencies.append(
+                f"Weapon-heavy on {top_weapon['name']} ({top_weapon['percent']}%)."
+            )
+
+    return tendencies
+
+
 def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]:
     with open(paths_path, "r", encoding="utf-8") as file_handle:
         payload = json.load(file_handle)
@@ -259,6 +305,37 @@ def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]
         rk: _top_n_with_percent(counts, 5) for rk, counts in defense_round_weapon_rates.items()
     }
 
+    tendencies_overall = _build_tendencies(
+        rounds=stats_overall["rounds"],
+        signature=sig_all,
+        avg_teammate_distance=(player_stats.get("avg_teammate_distance") or {}).get("overall"),
+        spike_rate=None,
+        headshot_rate=map_headshot_rate,
+        avg_kill_distance=player_stats.get("avg_kill_distance"),
+        top_weapon=map_top_weapons[0] if map_top_weapons else None,
+        side="Overall",
+    )
+    tendencies_attack = _build_tendencies(
+        rounds=stats_attack["rounds"],
+        signature=sig_attack,
+        avg_teammate_distance=(player_stats.get("avg_teammate_distance") or {}).get("attack"),
+        spike_rate=stats_attack.get("spike_rate_attack"),
+        headshot_rate=attack_headshot_rate,
+        avg_kill_distance=player_stats.get("avg_kill_distance"),
+        top_weapon=attack_top_weapons[0] if attack_top_weapons else None,
+        side="Attack",
+    )
+    tendencies_defense = _build_tendencies(
+        rounds=stats_defense["rounds"],
+        signature=sig_defense,
+        avg_teammate_distance=(player_stats.get("avg_teammate_distance") or {}).get("defense"),
+        spike_rate=None,
+        headshot_rate=defense_headshot_rate,
+        avg_kill_distance=player_stats.get("avg_kill_distance"),
+        top_weapon=defense_top_weapons[0] if defense_top_weapons else None,
+        side="Defense",
+    )
+
     return {
         "overall": stats_overall,
         "attack": stats_attack,
@@ -289,6 +366,11 @@ def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]
             "top_weapons": defense_top_weapons,
             "weapon_rates_by_round": defense_round_weapon_rates,
         },
+        "tendencies": {
+            "overall": tendencies_overall,
+            "attack": tendencies_attack,
+            "defense": tendencies_defense,
+        },
     }
 
 
@@ -300,6 +382,16 @@ def _top_n_with_percent(counts: Dict[str, int], n: int = 3) -> List[Dict[str, An
         percent = round((count / total) * 100.0, 2) if total else None
         output.append({"name": name, "count": count, "percent": percent})
     return output
+
+
+def _top_tendencies(items: List[str], max_items: int = 5) -> List[str]:
+    if not items:
+        return []
+    counts: Dict[str, int] = {}
+    for item in items:
+        counts[item] = counts.get(item, 0) + 1
+    ranked = sorted(counts.items(), key=lambda item: item[1], reverse=True)
+    return [item for item, _ in ranked[:max_items]]
 
 
 def _weapon_counts_from_round_shots(round_shots: Dict[str, Any]) -> Dict[str, int]:
@@ -348,6 +440,131 @@ def _filter_round_shots_by_side(
             game_bucket = filtered.setdefault(str(game_id), {})
             game_bucket[str(round_key)] = payload
     return filtered
+
+
+def _compute_team_avg_teammate_distance(
+    stats: Dict[str, Dict[str, Any]],
+) -> Dict[str, Dict[str, Optional[float]]]:
+    team_avgs: Dict[str, Dict[str, Optional[float]]] = {}
+    sums: Dict[str, Dict[str, float]] = {}
+    weights: Dict[str, Dict[str, float]] = {}
+
+    for player_maps in stats.values():
+        for map_name, summary in player_maps.items():
+            if map_name == "__overall__":
+                continue
+            player_stats = summary.get("player_stats", {}) or {}
+            distances = player_stats.get("avg_teammate_distance", {}) or {}
+            for side in ("overall", "attack", "defense"):
+                value = distances.get(side)
+                if value is None:
+                    continue
+                rounds = summary.get(side, {}).get("rounds") or 0
+                weight = float(rounds) if rounds else 1.0
+                sums.setdefault(map_name, {}).setdefault(side, 0.0)
+                weights.setdefault(map_name, {}).setdefault(side, 0.0)
+                sums[map_name][side] += float(value) * weight
+                weights[map_name][side] += weight
+
+    for map_name, side_weights in weights.items():
+        team_avgs.setdefault(map_name, {})
+        for side, weight in side_weights.items():
+            if not weight:
+                team_avgs[map_name][side] = None
+                continue
+            team_avgs[map_name][side] = round(sums[map_name][side] / weight, 2)
+
+    return team_avgs
+
+
+def _apply_team_spacing_tendencies(
+    stats: Dict[str, Dict[str, Any]],
+    team_avgs: Dict[str, Dict[str, Optional[float]]],
+) -> None:
+    for player_maps in stats.values():
+        for map_name, summary in player_maps.items():
+            if map_name == "__overall__":
+                continue
+            player_stats = summary.get("player_stats", {}) or {}
+            distances = player_stats.get("avg_teammate_distance", {}) or {}
+            tendencies = summary.get("tendencies", {}) or {}
+            for side in ("overall", "attack", "defense"):
+                team_avg = (team_avgs.get(map_name) or {}).get(side)
+                player_avg = distances.get(side)
+                if team_avg is None or player_avg is None:
+                    continue
+                items = tendencies.get(side, [])
+                filtered = [
+                    item
+                    for item in items
+                    if not (
+                        item.startswith("Plays spread out")
+                        or item.startswith("Plays grouped")
+                    )
+                ]
+                delta = float(player_avg) - float(team_avg)
+                if delta >= 300:
+                    filtered.append("Plays spread out.")
+                elif delta <= -200:
+                    filtered.append("Plays grouped.")
+                tendencies[side] = filtered
+            summary["tendencies"] = tendencies
+
+
+def _compute_team_avg_kill_distance(
+    stats: Dict[str, Dict[str, Any]],
+) -> Dict[str, Optional[float]]:
+    totals: Dict[str, Tuple[float, int]] = {}
+    for player_maps in stats.values():
+        for map_name, summary in player_maps.items():
+            if map_name == "__overall__":
+                continue
+            player_stats = summary.get("player_stats", {}) or {}
+            avg_kill_distance = player_stats.get("avg_kill_distance")
+            if avg_kill_distance is None:
+                continue
+            kills = int(player_stats.get("kill_count", 0) or 0)
+            weight = kills if kills > 0 else 1
+            current_total, current_weight = totals.get(map_name, (0.0, 0))
+            totals[map_name] = (
+                current_total + float(avg_kill_distance) * weight,
+                current_weight + weight,
+            )
+
+    averages: Dict[str, Optional[float]] = {}
+    for map_name, (total, weight) in totals.items():
+        averages[map_name] = round(total / weight, 2) if weight else None
+    return averages
+
+
+def _apply_team_kill_distance_tendencies(
+    stats: Dict[str, Dict[str, Any]],
+    team_avgs: Dict[str, Optional[float]],
+) -> None:
+    for player_maps in stats.values():
+        for map_name, summary in player_maps.items():
+            if map_name == "__overall__":
+                continue
+            team_avg = team_avgs.get(map_name)
+            player_stats = summary.get("player_stats", {}) or {}
+            player_avg = player_stats.get("avg_kill_distance")
+            if team_avg is None or player_avg is None:
+                continue
+            tendencies = summary.get("tendencies", {}) or {}
+            delta = float(player_avg) - float(team_avg)
+            for side in ("overall", "attack", "defense"):
+                items = tendencies.get(side, [])
+                filtered = [
+                    item
+                    for item in items
+                    if item not in ("Takes short-range fights.", "Takes long-range fights.")
+                ]
+                if delta <= -200:
+                    filtered.append("Takes short-range fights.")
+                elif delta >= 300:
+                    filtered.append("Takes long-range fights.")
+                tendencies[side] = filtered
+            summary["tendencies"] = tendencies
 
 
 def _aggregate_player_overall(maps: Dict[str, Any]) -> Dict[str, Any]:
@@ -515,6 +732,13 @@ def _collect_team_map_stats(stats: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     team_overall: List[Dict[str, Any]] = []
     map_names: List[str] = []
     maps: Dict[str, Dict[str, Any]] = {}
+    team_tendencies_overall: Dict[str, List[str]] = {"overall": [], "attack": [], "defense": []}
+    team_tendencies_by_map: Dict[str, Dict[str, List[str]]] = {}
+
+    team_avgs = _compute_team_avg_teammate_distance(stats)
+    _apply_team_spacing_tendencies(stats, team_avgs)
+    team_kill_avgs = _compute_team_avg_kill_distance(stats)
+    _apply_team_kill_distance_tendencies(stats, team_kill_avgs)
 
     for player_name, player_maps in stats.items():
         overall = player_maps.get("__overall__", {}).get("overall_player")
@@ -539,6 +763,11 @@ def _collect_team_map_stats(stats: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
                     "paths": [],
                 }
                 map_names.append(map_name)
+                team_tendencies_by_map[map_name] = {
+                    "overall": [],
+                    "attack": [],
+                    "defense": [],
+                }
             maps[map_name]["players"].append({"name": player_name, "summary": summary})
             maps[map_name]["paths"].append(
                 {
@@ -548,16 +777,31 @@ def _collect_team_map_stats(stats: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
                 }
             )
 
+            tendencies = summary.get("tendencies") or {}
+            for scope in ("overall", "attack", "defense"):
+                team_tendencies_by_map[map_name][scope].extend(tendencies.get(scope, []))
+
     map_names.sort()
     team_overall.sort(key=lambda item: item["name"].lower())
     for map_name in map_names:
         maps[map_name]["players"].sort(key=lambda item: item["name"].lower())
         maps[map_name]["paths"].sort(key=lambda item: item["name"].lower())
+        team_tendencies_by_map[map_name] = {
+            scope: _top_tendencies(team_tendencies_by_map[map_name][scope])
+            for scope in ("overall", "attack", "defense")
+        }
+
+    for scope in ("overall", "attack", "defense"):
+        team_tendencies_overall[scope] = _top_tendencies(
+            [item for map_t in team_tendencies_by_map.values() for item in map_t[scope]]
+        )
 
     return {
         "overall": team_overall,
         "map_names": map_names,
         "maps": maps,
+        "team_tendencies": team_tendencies_overall,
+        "team_tendencies_by_map": team_tendencies_by_map,
     }
 
 
