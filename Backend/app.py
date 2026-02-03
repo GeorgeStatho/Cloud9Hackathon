@@ -6,21 +6,67 @@ import subprocess
 import threading
 import queue
 import json
+import shutil
+import webbrowser
+import contextlib
+import io
+import time
 from pathlib import Path
 from typing import List, Tuple, Dict, Any, Optional
 
-from flask import Flask, render_template, request, jsonify, abort, send_file
+from flask import Flask, render_template, request, jsonify, abort, send_file, Response
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-GRAPHQL_DIR = ROOT_DIR / "GraphQlScripts"
-PATHS_DIR = ROOT_DIR / "PathScripts"
+FROZEN = getattr(sys, "frozen", False)
+if FROZEN:
+    BUNDLE_DIR = Path(getattr(sys, "_MEIPASS")).resolve()
+    RUNTIME_DIR = Path(sys.executable).resolve().parent
+else:
+    BUNDLE_DIR = Path(__file__).resolve().parent.parent
+    RUNTIME_DIR = BUNDLE_DIR
 
-for path in (str(ROOT_DIR), str(GRAPHQL_DIR), str(PATHS_DIR)):
+ROOT_DIR = RUNTIME_DIR
+DATA_DIR = RUNTIME_DIR / "Data"
+if FROZEN:
+    try:
+        os.chdir(RUNTIME_DIR)
+    except OSError:
+        pass
+
+MAPDATA_DIR = RUNTIME_DIR / "MapData"
+TEMPLATE_DIR = (BUNDLE_DIR / "Backend" / "templates").resolve()
+STATIC_DIR = (BUNDLE_DIR / "Backend" / "static").resolve()
+GRAPHQL_DIR = BUNDLE_DIR / "GraphQlScripts"
+PATHS_DIR = BUNDLE_DIR / "PathScripts"
+
+for path in (str(BUNDLE_DIR), str(GRAPHQL_DIR), str(PATHS_DIR)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
+if FROZEN:
+    import main as pipeline_main
+else:
+    pipeline_main = None
 
-app = Flask(__name__)
+
+def _ensure_runtime_assets() -> None:
+    global MAPDATA_DIR
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if not FROZEN:
+        return
+    runtime_mapdata = RUNTIME_DIR / "MapData"
+    if not runtime_mapdata.exists():
+        source = BUNDLE_DIR / "MapData"
+        if source.exists():
+            shutil.copytree(source, runtime_mapdata)
+    if runtime_mapdata.exists():
+        MAPDATA_DIR = runtime_mapdata
+
+
+app = Flask(
+    __name__,
+    template_folder=str(TEMPLATE_DIR),
+    static_folder=str(STATIC_DIR) if STATIC_DIR.exists() else None,
+)
 
 _log_queue: "queue.Queue[str]" = queue.Queue()
 _run_lock = threading.Lock()
@@ -32,6 +78,27 @@ def _drain_log_queue() -> None:
             _log_queue.get_nowait()
     except queue.Empty:
         pass
+
+
+def _start_pipeline_thread(
+    *,
+    api_key: str,
+    team_name: str,
+    seconds_limit: float,
+    time_threshold: float,
+) -> None:
+    def _worker() -> None:
+        try:
+            _run_pipeline(api_key, team_name, seconds_limit, time_threshold)
+        except Exception as exc:
+            _enqueue(f"Error: {exc}")
+        finally:
+            _enqueue("__PIPELINE_DONE__")
+            if _run_lock.locked():
+                _run_lock.release()
+
+    thread = threading.Thread(target=_worker, daemon=True)
+    thread.start()
 
 
 def _collect_files(team_name: str) -> dict:
@@ -884,6 +951,39 @@ def _run_pipeline(
     env = os.environ.copy()
     env["GRID_API_KEY"] = api_key
 
+    if FROZEN and pipeline_main is not None:
+        logs.append("Running pipeline in-process (frozen)")
+        _enqueue(logs[-1])
+
+        class _LogWriter:
+            def __init__(self):
+                self._buf = ""
+
+            def write(self, data: str) -> int:
+                if not data:
+                    return 0
+                self._buf += data
+                while "\n" in self._buf:
+                    line, self._buf = self._buf.split("\n", 1)
+                    line = line.rstrip()
+                    if line:
+                        logs.append(line)
+                        _enqueue(line)
+                return len(data)
+
+            def flush(self) -> None:
+                if self._buf.strip():
+                    line = self._buf.strip()
+                    logs.append(line)
+                    _enqueue(line)
+                self._buf = ""
+
+        writer = _LogWriter()
+        with contextlib.redirect_stdout(writer), contextlib.redirect_stderr(writer):
+            pipeline_main.run_pipeline(team_name, api_key, seconds_limit, time_threshold)
+        writer.flush()
+        return logs
+
     cmd = [
         sys.executable,
         str(ROOT_DIR / "main.py"),
@@ -921,106 +1021,90 @@ def _run_pipeline(
 
     return logs
 
+@app.route("/api/run", methods=["POST"])
+def api_run():
+    if not _run_lock.acquire(blocking=False):
+        return jsonify({"error": "Pipeline already running"}), 409
 
-@app.route("/", methods=["GET"])
-def index():
-    logs: List[str] = []
-    outputs = None
-    error = None
-    api_key = ""
-    team_name = ""
-    seconds_limit = 120.0
-    time_threshold = 30.0
+    payload = request.get_json(silent=True) or {}
+    api_key = str(payload.get("api_key", "")).strip()
+    team_name = str(payload.get("team_name", "")).strip()
+    if not api_key or not team_name:
+        if _run_lock.locked():
+            _run_lock.release()
+        return jsonify({"error": "Missing API key or team name"}), 400
 
-    return render_template(
-        "index.html",
-        logs=logs,
-        outputs=outputs,
-        error=error,
+    seconds_limit = float(payload.get("seconds_limit") or 120)
+    time_threshold = float(payload.get("time_threshold") or 30)
+    _drain_log_queue()
+    _start_pipeline_thread(
         api_key=api_key,
         team_name=team_name,
         seconds_limit=seconds_limit,
         time_threshold=time_threshold,
     )
-
-
-@app.route("/api/run", methods=["POST"])
-def api_run():
-    body = request.get_json(silent=True) or {}
-    _drain_log_queue()
-    api_key = (body.get("api_key") or "").strip()
-    team_name = (body.get("team_name") or "").strip()
-    seconds_limit = float(body.get("seconds_limit", 120.0) or 120.0)
-    time_threshold = float(body.get("time_threshold", 30.0) or 30.0)
-
-    if not api_key or not team_name:
-        return {"ok": False, "error": "Please provide both API key and team name."}, 400
-
-    if not _run_lock.acquire(blocking=False):
-        return {"ok": False, "error": "Pipeline already running."}, 409
-
-    def _runner() -> None:
-        try:
-            _run_pipeline(
-                api_key,
-                team_name,
-                seconds_limit=seconds_limit,
-                time_threshold=time_threshold,
-            )
-        except Exception as exc:
-            _enqueue(f"ERROR: {exc}")
-        finally:
-            _enqueue("__PIPELINE_DONE__")
-            _run_lock.release()
-
-    threading.Thread(target=_runner, daemon=True).start()
-    return {"ok": True}
+    return jsonify({"status": "started"})
 
 
 @app.route("/api/stream")
 def api_stream():
-    def stream():
+    def _gen():
+        last_heartbeat = time.time()
         while True:
-            line = _log_queue.get()
-            yield f"data: {line}\n\n"
-            if line == "__PIPELINE_DONE__":
+            try:
+                msg = _log_queue.get(timeout=1)
+            except queue.Empty:
+                if time.time() - last_heartbeat >= 2:
+                    yield ": keepalive\n\n"
+                    last_heartbeat = time.time()
+                continue
+            yield f"data: {msg}\n\n"
+            if msg == "__PIPELINE_DONE__":
                 break
-
-    return app.response_class(stream(), mimetype="text/event-stream")
+    return Response(
+        _gen(),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @app.route("/api/file")
 def api_file():
-    rel = (request.args.get("path") or "").strip()
+    rel = request.args.get("path", "")
     if not rel:
         abort(400)
     try:
-        p = _safe_repo_path(ROOT_DIR, rel)
-    except Exception:
+        path = _safe_repo_path(ROOT_DIR, rel)
+    except ValueError:
         abort(400)
-    if not p.exists() or not p.is_file():
+    if not path.exists():
         abort(404)
-    if p.suffix.lower() not in (".json", ".jsonl"):
-        abort(400)
-    payload = _load_json_file(p)
+    payload = _load_json_file(path)
     return jsonify(payload)
 
 
 @app.route("/api/map/<map_name>")
 def api_map(map_name: str):
-    callouts = _map_callouts(map_name)
-    return jsonify({"map": map_name, "callouts": callouts})
+    return jsonify({"callouts": _map_callouts(map_name)})
 
 
-@app.route("/files/<path:relpath>")
-def serve_file(relpath: str):
+@app.route("/files/<path:rel_path>")
+def files(rel_path: str):
     try:
-        p = _safe_repo_path(ROOT_DIR, relpath)
-    except Exception:
+        path = _safe_repo_path(ROOT_DIR, rel_path)
+    except ValueError:
         abort(400)
-    if not p.exists() or not p.is_file():
+    if not path.exists():
         abort(404)
-    return send_file(p)
+    return send_file(path)
+
+
+@app.route("/", methods=["GET"])
+def index():
+    return render_template("index.html")
 
 
 @app.route("/results/<team_name>", methods=["GET"])
@@ -1036,4 +1120,17 @@ def results(team_name: str):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    if FROZEN:
+        app.run(debug=False, use_reloader=False, threaded=True)
+    else:
+        app.run(debug=True, use_reloader=True, threaded=True)
+
+
+
+
+
+
+
+
+
+

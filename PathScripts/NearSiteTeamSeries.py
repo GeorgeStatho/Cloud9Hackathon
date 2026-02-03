@@ -33,6 +33,20 @@ def generate_team_nearsite_series(
     players = _load_team_players(team_name)
     # Build ability cache once before spawning workers.
     _ability_event_index(team_name)
+    use_processes = not getattr(sys, "frozen", False)
+    if os.environ.get("CLOUD9_DISABLE_MULTIPROC") == "1":
+        use_processes = False
+
+    if not use_processes:
+        for player_name in players.keys():
+            generate_player_nearsite_series(
+                team_name=team_name,
+                player_name=player_name,
+                time_seconds=time_seconds,
+                side=side,
+            )
+        return
+
     max_workers = min(8, os.cpu_count() or 4)
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = [

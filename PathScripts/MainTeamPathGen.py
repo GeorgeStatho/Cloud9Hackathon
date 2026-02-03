@@ -148,6 +148,21 @@ def generateTeamPaths(
     team_players_root = Path('Data') / team_name.replace(' ', '_') / 'Players'
     _cleanup_tmp_files(team_players_root)
     series_list = list(_series_files(team_name))
+    use_processes = not getattr(sys, "frozen", False)
+    if os.environ.get("CLOUD9_DISABLE_MULTIPROC") == "1":
+        use_processes = False
+
+    if not use_processes:
+        for series_id, end_state_path, jsonl_path in series_list:
+            _process_series(
+                team_name,
+                series_id,
+                end_state_path,
+                jsonl_path,
+                seconds_limit,
+            )
+        return
+
     max_workers = min(4, os.cpu_count() or 2)
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = [

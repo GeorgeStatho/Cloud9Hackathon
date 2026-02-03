@@ -28,6 +28,20 @@ def _load_team_players(team_name: str) -> Dict[str, str]:
 def generate_team_player_statistics(team_name: str) -> None:
     players = _load_team_players(team_name)
     event_stats = compute_team_player_event_stats(team_name)
+    use_processes = not getattr(sys, "frozen", False)
+    if os.environ.get("CLOUD9_DISABLE_MULTIPROC") == "1":
+        use_processes = False
+
+    if not use_processes:
+        for player_name, player_id in players.items():
+            generate_player_statistics_for_player(
+                team_name,
+                player_name,
+                player_id,
+                event_stats,
+            )
+        return
+
     max_workers = min(8, os.cpu_count() or 4)
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = [

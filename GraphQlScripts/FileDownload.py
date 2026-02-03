@@ -32,11 +32,13 @@ def _request_with_backoff(
     delay_between_calls: float = 1.5,
 ):
     delay = 2
+    last_exc = None
     for attempt in range(max_retries):
         time.sleep(delay_between_calls)
         try:
             response = requests.get(url, headers=_get_headers(), stream=stream, timeout=timeout)
-        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError):
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as exc:
+            last_exc = exc
             time.sleep(delay)
             delay = min(delay * 2, 30)
             continue
@@ -49,9 +51,12 @@ def _request_with_backoff(
             sleep_time = delay
         time.sleep(sleep_time)
         delay = min(delay * 2, 30)
+    if last_exc is not None:
+        raise TimeoutError(
+            "File download timed out. Delete the team file for this team and try again."
+        ) from last_exc
     response.raise_for_status()
     return response
-
 
 def download_series_files(series_id: str):
     url = API_URL.format(seriesId=series_id)
@@ -76,3 +81,9 @@ def download_file(full_url: str, output_filename: str, output_path: str | None =
 
 #first_file = files[0]
 #download_file(first_file["fullURL"], first_file["fileName"])
+
+
+
+
+
+
