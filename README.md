@@ -2,7 +2,9 @@ Cloud9 Hackathon Project: Automated Scouting Report Generator
 
 This project generates scouting reports from GRID series data, then serves them in a Flask web app.
 
-Quick start
+Start from the .exe file is best
+
+Quick start from commandLine
 1) Create and activate a Python 3.10+ environment.
 2) Install dependencies:
    pip install -r requirements.txt
