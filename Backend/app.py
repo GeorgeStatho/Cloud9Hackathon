@@ -161,7 +161,9 @@ def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]
     stats_attack["spike_rate_attack"] = _spike_rate_attack(attack_rounds)
 
     nearsite_path = paths_path.with_name(f"{paths_path.stem}_all_nearsite.json")
+    display_path = paths_path.with_name(f"{paths_path.stem}_display.json")
     nearsite_rel = None
+    display_rel = None
     sig_all = {"zone": None, "percent": None}
     sig_attack = {"zone": None, "percent": None}
     sig_defense = {"zone": None, "percent": None}
@@ -172,6 +174,9 @@ def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]
         sig_all = _signature_from_nearsite(nearsite, "percentages")
         sig_attack = _signature_from_nearsite(nearsite, "percentages_attack")
         sig_defense = _signature_from_nearsite(nearsite, "percentages_defense")
+
+    if display_path.exists():
+        display_rel = str(display_path.relative_to(ROOT_DIR)).replace("\\", "/")
 
     stats_path = paths_path.with_name(f"{paths_path.stem}_playerstatistics.json")
     player_stats: Dict[str, Any] = {}
@@ -262,6 +267,7 @@ def _build_player_map_summary(paths_path: Path, map_name: str) -> Dict[str, Any]
         "signature_zone_attack": sig_attack,
         "signature_zone_defense": sig_defense,
         "paths_rel": str(paths_path.relative_to(ROOT_DIR)).replace("\\", "/"),
+        "paths_display_rel": display_rel,
         "map_image_rel": _map_image_rel(map_name),
         "nearsite_rel": nearsite_rel,
         "player_stats": player_stats,
@@ -535,7 +541,11 @@ def _collect_team_map_stats(stats: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
                 map_names.append(map_name)
             maps[map_name]["players"].append({"name": player_name, "summary": summary})
             maps[map_name]["paths"].append(
-                {"name": player_name, "paths_rel": summary.get("paths_rel")}
+                {
+                    "name": player_name,
+                    "paths_rel": summary.get("paths_rel"),
+                    "paths_display_rel": summary.get("paths_display_rel"),
+                }
             )
 
     map_names.sort()

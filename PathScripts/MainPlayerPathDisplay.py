@@ -10,7 +10,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from PositionalObjects.Map import Map
-from PathScripts.DisplayPath import render_paths_overlay
+from PathScripts.DisplayPath import render_paths_overlay, render_paths_json
 
 
 def _infer_map_name(paths_json_path: Path) -> str:
@@ -35,6 +35,14 @@ def render_player_paths(
     if not map_json.exists():
         return None
     map_info = Map.from_map_json(str(map_json))
+
+    display_path = paths_json_path.with_name(f"{paths_json_path.stem}_display.json")
+    render_paths_json(
+        paths_json_path=str(paths_json_path),
+        map_png_path=map_info.img_path,
+        output_json_path=str(display_path),
+        map_info=map_info,
+    )
 
     output_path = paths_json_path.with_name(
         f"{player_name}_{map_name}_{side}_paths_overlay.png"

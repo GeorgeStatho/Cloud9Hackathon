@@ -515,6 +515,7 @@
           data-map-panel="{{ map_name }}"
           data-map-name="{{ map_name }}"
           data-paths-rel="{{ summary.paths_rel }}"
+          data-display-paths-rel="{{ summary.paths_display_rel or '' }}"
           data-nearsite-rel="{{ summary.nearsite_rel or '' }}"
           data-map-image-rel="{{ summary.map_image_rel }}"
           data-map-stats='{{ summary.map_stats | tojson }}'
@@ -881,8 +882,14 @@
           ctx.beginPath();
           for (const sample of samples) {
             if (sample.t == null || sample.t > t) break;
-            const x = sample.ix ?? null;
-            const y = sample.iy ?? null;
+            const x =
+              sample.nx != null
+                ? sample.nx * image.width
+                : sample.ix ?? null;
+            const y =
+              sample.ny != null
+                ? sample.ny * image.height
+                : sample.iy ?? null;
             if (x == null || y == null) continue;
             if (!started) {
               ctx.moveTo(x, y);
@@ -907,8 +914,14 @@
           let started = false;
           ctx.beginPath();
           for (const sample of samples) {
-            const x = sample.ix ?? null;
-            const y = sample.iy ?? null;
+            const x =
+              sample.nx != null
+                ? sample.nx * image.width
+                : sample.ix ?? null;
+            const y =
+              sample.ny != null
+                ? sample.ny * image.height
+                : sample.iy ?? null;
             if (x == null || y == null) continue;
             if (!started) {
               ctx.moveTo(x, y);
@@ -1002,12 +1015,14 @@
       async function attachSignatureSliders(panel) {
         const mapName = panel.dataset.mapName;
         const pathsRel = panel.dataset.pathsRel;
+        const displayRel = panel.dataset.displayPathsRel;
         const nearsiteRel = panel.dataset.nearsiteRel;
         const mapImageRel = panel.dataset.mapImageRel;
         if (!mapName || !pathsRel) return;
 
-        const [pathsPayload, mapPayload, nearsitePayload] = await Promise.all([
+        const [pathsPayload, displayPayload, mapPayload, nearsitePayload] = await Promise.all([
           fetchJson(`/api/file?path=${encodeURIComponent(pathsRel)}`),
+          displayRel ? fetchJson(`/api/file?path=${encodeURIComponent(displayRel)}`) : Promise.resolve(null),
           fetchJson(`/api/map/${encodeURIComponent(mapName)}`),
           nearsiteRel ? fetchJson(`/api/file?path=${encodeURIComponent(nearsiteRel)}`) : Promise.resolve(null),
         ]);
@@ -1052,12 +1067,17 @@
               el.textContent = entry && entry.percent != null ? `${entry.percent}%` : "";
             });
             if (ctx && mapImage) {
-              const rounds =
-                scope === "attack"
+              const rounds = displayPayload
+                ? (scope === "attack"
+                  ? displayPayload.attack_rounds || {}
+                  : scope === "defense"
+                  ? displayPayload.defense_rounds || {}
+                  : displayPayload.rounds || {})
+                : (scope === "attack"
                   ? pathsPayload.attack_rounds || {}
                   : scope === "defense"
                   ? pathsPayload.defense_rounds || {}
-                  : pathsPayload.rounds || {};
+                  : pathsPayload.rounds || {});
               drawPathsUpTo(ctx, mapImage, rounds, t);
             }
           };
@@ -1117,7 +1137,9 @@
 
         const payloads = await Promise.all(
           teamPaths.map((entry) =>
-            entry.paths_rel
+            entry.paths_display_rel
+              ? fetchJson(`/api/file?path=${encodeURIComponent(entry.paths_display_rel)}`)
+              : entry.paths_rel
               ? fetchJson(`/api/file?path=${encodeURIComponent(entry.paths_rel)}`)
               : Promise.resolve(null)
           )
