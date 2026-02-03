@@ -567,6 +567,50 @@ def _apply_team_kill_distance_tendencies(
             summary["tendencies"] = tendencies
 
 
+def _compute_team_compositions(
+    stats: Dict[str, Dict[str, Any]],
+) -> Dict[str, List[Dict[str, Any]]]:
+    compositions: Dict[str, Dict[str, List[str]]] = {}
+
+    for player_maps in stats.values():
+        for map_name, summary in player_maps.items():
+            if map_name == "__overall__":
+                continue
+            player_stats = summary.get("player_stats", {}) or {}
+            game_agents = player_stats.get("game_agents", {}) or {}
+            if not game_agents:
+                continue
+            for game_id, agent in game_agents.items():
+                if not agent:
+                    continue
+                game_bucket = compositions.setdefault(map_name, {})
+                key = str(game_id)
+                game_bucket.setdefault(key, []).append(agent)
+
+    output: Dict[str, List[Dict[str, Any]]] = {}
+    for map_name, game_agent_lists in compositions.items():
+        comp_counts: Dict[str, int] = {}
+        total = 0
+        for agents in game_agent_lists.values():
+            if not agents or len(agents) < 5:
+                continue
+            comp = " / ".join(sorted(agents))
+            comp_counts[comp] = comp_counts.get(comp, 0) + 1
+            total += 1
+        if not comp_counts or total == 0:
+            continue
+        ranked = sorted(comp_counts.items(), key=lambda item: item[1], reverse=True)[:5]
+        output[map_name] = [
+            {
+                "composition": comp,
+                "count": count,
+                "percent": round((count / total) * 100.0, 2),
+            }
+            for comp, count in ranked
+        ]
+    return output
+
+
 def _aggregate_player_overall(maps: Dict[str, Any]) -> Dict[str, Any]:
     total_kills = 0
     total_deaths = 0
@@ -734,11 +778,13 @@ def _collect_team_map_stats(stats: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     maps: Dict[str, Dict[str, Any]] = {}
     team_tendencies_overall: Dict[str, List[str]] = {"overall": [], "attack": [], "defense": []}
     team_tendencies_by_map: Dict[str, Dict[str, List[str]]] = {}
+    team_compositions: Dict[str, List[Dict[str, Any]]] = {}
 
     team_avgs = _compute_team_avg_teammate_distance(stats)
     _apply_team_spacing_tendencies(stats, team_avgs)
     team_kill_avgs = _compute_team_avg_kill_distance(stats)
     _apply_team_kill_distance_tendencies(stats, team_kill_avgs)
+    team_compositions = _compute_team_compositions(stats)
 
     for player_name, player_maps in stats.items():
         overall = player_maps.get("__overall__", {}).get("overall_player")
@@ -790,6 +836,8 @@ def _collect_team_map_stats(stats: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
             scope: _top_tendencies(team_tendencies_by_map[map_name][scope])
             for scope in ("overall", "attack", "defense")
         }
+        if map_name in team_compositions:
+            maps[map_name]["top_compositions"] = team_compositions[map_name]
 
     for scope in ("overall", "attack", "defense"):
         team_tendencies_overall[scope] = _top_tendencies(

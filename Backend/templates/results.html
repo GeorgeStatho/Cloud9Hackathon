@@ -310,6 +310,7 @@
                 <div>N/A</div>
               {% endif %}
             </div>
+
           </div>
         </div>
 
@@ -481,6 +482,16 @@
               {% if team_stats.team_tendencies_by_map[map_name].defense %}
                 {% for item in team_stats.team_tendencies_by_map[map_name].defense %}
                   <div>• {{ item }}</div>
+                {% endfor %}
+              {% else %}
+                <div>N/A</div>
+              {% endif %}
+            </div>
+            <div class="card">
+              <h4>Most played compositions</h4>
+              {% if map_entry.top_compositions %}
+                {% for comp in map_entry.top_compositions %}
+                  <div>{{ comp.composition }} — {{ comp.percent }}%</div>
                 {% endfor %}
               {% else %}
                 <div>N/A</div>
@@ -1398,3 +1409,4 @@
     </script>
   </body>
 </html>
+
