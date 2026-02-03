@@ -13,6 +13,13 @@ from PathScripts.MainPlayerPathDisplay import render_player_paths, _infer_map_na
 from PathScripts.DisplayPath import render_team_paths_overlay, render_team_clusters_overlay, render_paths_json
 from PositionalObjects.Map import Map
 
+import os  # add this
+
+def _ensure_frozen_cwd() -> None:
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        os.chdir(exe_dir)
+
 def _cleanup_tmp_files(root: Path) -> None:
     if not root.exists():
         return
@@ -38,6 +45,7 @@ def _player_paths(team_name: str) -> Iterable[Path]:
 
 
 def render_team_paths(team_name: str, side: str = "all") -> None:
+    _ensure_frozen_cwd()
     # Render overlays for every player's paths JSON in the team folder.
     team_players_root = Path('Data') / team_name.replace(' ', '_') / 'Players'
     _cleanup_tmp_files(team_players_root)

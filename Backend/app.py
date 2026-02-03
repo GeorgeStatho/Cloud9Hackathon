@@ -16,6 +16,12 @@ from typing import List, Tuple, Dict, Any, Optional
 
 from flask import Flask, render_template, request, jsonify, abort, send_file, Response
 
+import multiprocessing as mp
+
+if __name__ == "__main__":
+    mp.freeze_support()
+
+
 FROZEN = getattr(sys, "frozen", False)
 if FROZEN:
     BUNDLE_DIR = Path(getattr(sys, "_MEIPASS")).resolve()

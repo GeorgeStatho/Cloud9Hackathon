@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -12,6 +13,11 @@ if str(ROOT_DIR) not in sys.path:
 from PositionalObjects.Map import Map
 from PathScripts.DisplayPath import render_paths_overlay, render_paths_json
 
+def _ensure_frozen_cwd() -> None:
+    # In PyInstaller, worker processes may start with a different CWD.
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        os.chdir(exe_dir)
 
 def _infer_map_name(paths_json_path: Path) -> str:
     # Infer the map name from the filename pattern: <player>_<map>_paths.json
@@ -29,6 +35,7 @@ def render_player_paths(
     paths_json_path: Path,
     side: str = "all",
 ) -> Optional[Path]:
+    _ensure_frozen_cwd()
     # Render a single player's paths JSON into an overlay PNG.
     map_name = _infer_map_name(paths_json_path)
     map_json = Path("MapData") / map_name / f"{map_name}.json"

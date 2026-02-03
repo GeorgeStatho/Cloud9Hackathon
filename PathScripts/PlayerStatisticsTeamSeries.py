@@ -6,6 +6,15 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict
 
+def _fix_frozen_cwd() -> None:
+    # When running as a PyInstaller exe, child processes start without app.py's os.chdir().
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        try:
+            os.chdir(exe_dir)
+        except OSError:
+            pass
+
 # Allow running as a script from the repo root by ensuring the root is on sys.path.
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
@@ -26,9 +35,10 @@ def _load_team_players(team_name: str) -> Dict[str, str]:
 
 
 def generate_team_player_statistics(team_name: str) -> None:
+    _fix_frozen_cwd()
     players = _load_team_players(team_name)
     event_stats = compute_team_player_event_stats(team_name)
-    use_processes = not getattr(sys, "frozen", False)
+    use_processes = True  # TEMP: ignore frozen guard
     if os.environ.get("CLOUD9_DISABLE_MULTIPROC") == "1":
         use_processes = False
 

@@ -148,7 +148,7 @@ def generateTeamPaths(
     team_players_root = Path('Data') / team_name.replace(' ', '_') / 'Players'
     _cleanup_tmp_files(team_players_root)
     series_list = list(_series_files(team_name))
-    use_processes = not getattr(sys, "frozen", False)
+    use_processes = True  # TEMP: ignore frozen guard
     if os.environ.get("CLOUD9_DISABLE_MULTIPROC") == "1":
         use_processes = False
 
