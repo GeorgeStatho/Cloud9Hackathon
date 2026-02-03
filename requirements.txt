@@ -1,0 +1,5 @@
+flask>=2.3
+gql>=3.5
+requests>=2.31
+pillow>=10.0
+numpy>=1.24
