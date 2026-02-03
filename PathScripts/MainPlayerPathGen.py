@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -12,6 +13,14 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from PathScripts.PathGenerator import build_player_round_paths
+
+
+def _atomic_json_dump(path: Path, payload: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(path.suffix + '.tmp')
+    with open(tmp_path, 'w', encoding='utf-8') as out_handle:
+        json.dump(payload, out_handle, indent=2, ensure_ascii=False)
+    os.replace(tmp_path, path)
 
 
 def _resolve_series_jsonl(team_name: str, series_filename: str) -> Path:
@@ -36,8 +45,7 @@ def _write_player_paths(
     output_dir = Path("Data") / safe_team / "Players" / safe_player / safe_map
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{safe_player}_{safe_map}_paths.json"
-    with open(output_path, "w", encoding="utf-8") as file_handle:
-        json.dump(output, file_handle, indent=2, ensure_ascii=False)
+    _atomic_json_dump(output_path, output)
     return output_path
 
 

@@ -17,6 +17,20 @@ if str(ROOT_DIR) not in sys.path:
 from AttackDefenseParser import parse_attack_defense_rounds
 from PathScripts.PathGenerator import build_team_round_paths_one_pass
 
+def _cleanup_tmp_files(root: Path) -> None:
+    if not root.exists():
+        return
+    for tmp_path in root.rglob('*.tmp'):
+        try:
+            tmp_path.unlink()
+        except OSError:
+            pass
+    for lock_path in root.rglob('*.lock'):
+        try:
+            lock_path.unlink()
+        except OSError:
+            pass
+
 
 def _load_end_state(end_state_path: Path) -> Dict[str, Any]:
     # Load the end_state JSON so we can extract the series roster for this team.
@@ -131,7 +145,24 @@ def generateTeamPaths(
     seconds_limit: float = 5.0,
 ) -> None:
     # Iterate each series for this team
+    team_players_root = Path('Data') / team_name.replace(' ', '_') / 'Players'
+    _cleanup_tmp_files(team_players_root)
     series_list = list(_series_files(team_name))
+    use_processes = True  # TEMP: ignore frozen guard
+    if os.environ.get("CLOUD9_DISABLE_MULTIPROC") == "1":
+        use_processes = False
+
+    if not use_processes:
+        for series_id, end_state_path, jsonl_path in series_list:
+            _process_series(
+                team_name,
+                series_id,
+                end_state_path,
+                jsonl_path,
+                seconds_limit,
+            )
+        return
+
     max_workers = min(4, os.cpu_count() or 2)
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = [

@@ -124,12 +124,7 @@
           <label for="api_key">API Key</label>
           <input id="api_key" name="api_key" value="{{ api_key }}" placeholder="GRID API key" />
           <label for="team_name">Team Name</label>
-          <input id="team_name" name="team_name" value="{{ team_name }}" placeholder="e.g. NRG" />
-          <label for="seconds_limit">Seconds Limit (path generation)</label>
-          <input id="seconds_limit" name="seconds_limit" value="{{ seconds_limit }}" type="number" step="1" min="1" />
-          <label for="time_threshold">Time Threshold (NearSite)</label>
-          <input id="time_threshold" name="time_threshold" value="{{ time_threshold }}" type="number" step="1" min="1" />
-          <div id="progressWrap" class="progress-wrap">
+          <input id="team_name" name="team_name" value="{{ team_name }}" placeholder="e.g. NRG" /><div id="progressWrap" class="progress-wrap">
             <div id="progressLabel" class="progress-label">Preparing...</div>
             <div class="progress-bar">
               <div id="progressFill" class="progress-fill"></div>
@@ -175,8 +170,8 @@
     <script>
       const apiKeyInput = document.getElementById("api_key");
       const teamInput = document.getElementById("team_name");
-      const secondsInput = document.getElementById("seconds_limit");
-      const timeInput = document.getElementById("time_threshold");
+      const DEFAULT_SECONDS = 120;
+      const DEFAULT_TIME_THRESHOLD = 30;
       const runBtn = document.getElementById("runBtn");
 
       const runLog = document.getElementById("runLog");
@@ -188,13 +183,11 @@
       function toggleRun() {
         const ok =
           apiKeyInput.value.trim() &&
-          teamInput.value.trim() &&
-          secondsInput.value.trim() &&
-          timeInput.value.trim();
+          teamInput.value.trim();
         runBtn.disabled = !ok;
       }
 
-      [apiKeyInput, teamInput, secondsInput, timeInput].forEach((el) =>
+      [apiKeyInput, teamInput].forEach((el) =>
         el.addEventListener("input", toggleRun)
       );
       toggleRun();
@@ -210,8 +203,8 @@
         const payload = {
           api_key: apiKeyInput.value.trim(),
           team_name: teamInput.value.trim(),
-          seconds_limit: Number(secondsInput.value),
-          time_threshold: Number(timeInput.value),
+          seconds_limit: DEFAULT_SECONDS,
+          time_threshold: DEFAULT_TIME_THRESHOLD,
         };
 
         const resp = await fetch("/api/run", {
@@ -264,3 +257,5 @@
     </script>
   </body>
 </html>
+
+

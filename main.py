@@ -18,6 +18,12 @@ from GraphQlScripts.GraphQlmain import generatePlayersFromTeamName,generateTeamS
 
 from GraphQlScripts import Keys
 
+if __name__ == "__main__":
+    import multiprocessing as mp
+    mp.freeze_support()
+
+    import argparse
+
 def _emit_progress(step: int, total: int, message: str) -> None:
     print(f"[progress] {step}/{total} {message}", flush=True)
 

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import tempfile
+import time
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
@@ -105,8 +108,53 @@ def _build_output(
 
 def _write_output(output_path: Path, output: Dict[str, Any]) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as out_handle:
-        json.dump(output, out_handle, indent=2, ensure_ascii=False)
+    _atomic_json_dump(output_path, output)
+
+
+def _atomic_json_dump(path: Path, payload: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Unique temp file per process/thread to avoid collisions
+    with tempfile.NamedTemporaryFile(
+        mode='w',
+        encoding='utf-8',
+        delete=False,
+        dir=path.parent,
+        prefix=path.name + '.',
+        suffix='.tmp',
+    ) as out_handle:
+        json.dump(payload, out_handle, indent=2, ensure_ascii=False)
+        tmp_path = Path(out_handle.name)
+    lock_path = _acquire_file_lock(path)
+    try:
+        for attempt in range(5):
+            try:
+                os.replace(tmp_path, path)
+                return
+            except PermissionError:
+                if attempt == 4:
+                    raise
+                time.sleep(0.05 * (attempt + 1))
+    finally:
+        _release_file_lock(lock_path)
+
+
+def _acquire_file_lock(path: Path, retries: int = 20) -> Path:
+    lock_path = path.with_suffix(path.suffix + '.lock')
+    for attempt in range(retries):
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return lock_path
+        except FileExistsError:
+            time.sleep(0.05 * (attempt + 1))
+    raise PermissionError(f"Could not acquire lock for {path}")
+
+
+def _release_file_lock(lock_path: Path) -> None:
+    try:
+        os.unlink(lock_path)
+    except FileNotFoundError:
+        pass
 
 
 def _should_mark_game_end(event_type: Optional[str]) -> bool:
@@ -341,8 +389,7 @@ def _dump_seen_maps(
     if debug_map_dump is None:
         return
     debug_map_dump.parent.mkdir(parents=True, exist_ok=True)
-    with open(debug_map_dump, "w", encoding="utf-8") as out_handle:
-        json.dump(seen_maps, out_handle, indent=2, ensure_ascii=False)
+    _atomic_json_dump(debug_map_dump, seen_maps)
 
 
 def build_team_round_paths_one_pass(

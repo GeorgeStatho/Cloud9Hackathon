@@ -1,12 +1,65 @@
 from __future__ import annotations
 
 import json
+import tempfile
+import time
+import os
 import numpy as np
 from collections import deque
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Optional
 from array import array
 from PIL import Image, ImageDraw, ImageFilter
+
+
+def _atomic_json_dump(path, payload) -> None:
+    path = Path(path) if not isinstance(path, Path) else path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        mode='w',
+        encoding='utf-8',
+        delete=False,
+        dir=path.parent,
+        prefix=path.name + '.',
+        suffix='.tmp',
+    ) as out_handle:
+        json.dump(payload, out_handle, indent=2, ensure_ascii=False)
+        tmp_path = Path(out_handle.name)
+    lock_path = _acquire_file_lock(path)
+    try:
+        for attempt in range(5):
+            try:
+                os.replace(tmp_path, path)
+                return
+            except PermissionError:
+                if attempt == 4:
+                    if path.exists():
+                        try:
+                            tmp_path.unlink()
+                        except OSError:
+                            pass
+                        return
+                    raise
+                time.sleep(0.05 * (attempt + 1))
+    finally:
+        _release_file_lock(lock_path)
+
+def _acquire_file_lock(path: Path, retries: int = 20) -> Path:
+    lock_path = path.with_suffix(path.suffix + '.lock')
+    for attempt in range(retries):
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return lock_path
+        except FileExistsError:
+            time.sleep(0.05 * (attempt + 1))
+    raise PermissionError(f"Could not acquire lock for {path}")
+
+def _release_file_lock(lock_path: Path) -> None:
+    try:
+        os.unlink(lock_path)
+    except FileNotFoundError:
+        pass
 
 from PositionalObjects.Map import Map
 from PositionalObjects.Path import Path as PlayerPath
@@ -510,19 +563,15 @@ def render_paths_json(
         ]
 
     output_path = _resolve_output_path(paths_json_path, output_json_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as out_handle:
-        json.dump(
-            {
-                "source": paths_json_path,
-                "rounds": output_rounds,
-                "attack_rounds": output_attack,
-                "defense_rounds": output_defense,
-            },
-            out_handle,
-            indent=2,
-            ensure_ascii=False,
-        )
+    _atomic_json_dump(
+        output_path,
+        {
+            "source": paths_json_path,
+            "rounds": output_rounds,
+            "attack_rounds": output_attack,
+            "defense_rounds": output_defense,
+        },
+    )
 
 
 def render_team_paths_overlay(
