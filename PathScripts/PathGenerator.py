@@ -90,6 +90,9 @@ def _build_output(
                 ix, iy = sample.to_image(map_info)
                 entry["ix"] = ix
                 entry["iy"] = iy
+                if map_info.image_width and map_info.image_height:
+                    entry["nx"] = ix / float(map_info.image_width)
+                    entry["ny"] = iy / float(map_info.image_height)
             samples.append(entry)
         output["rounds"][str(rid)] = samples
         if round_game_ids is not None:

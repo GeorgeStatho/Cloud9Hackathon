@@ -4,7 +4,7 @@ import json
 import numpy as np
 from collections import deque
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Optional
 from array import array
 from PIL import Image, ImageDraw, ImageFilter
 
@@ -98,6 +98,103 @@ def _iter_round_points(
             yield ix, iy
 
 
+def _iter_round_samples(
+    round_data: List[Dict[str, float]] | PlayerPath,
+    map_info: Map | None,
+    image_size: Tuple[int, int],
+) -> Iterable[Tuple[float, float, float]]:
+    width, height = image_size
+    if isinstance(round_data, PlayerPath):
+        for sample in round_data:
+            if not isinstance(sample, Position):
+                continue
+            ix, iy = (
+                sample.to_image(map_info) if map_info is not None else (sample.gx, sample.gy)
+            )
+            yield float(sample.t), float(ix), float(iy)
+        return
+
+    for sample in round_data:
+        t = sample.get("t")
+        if t is None:
+            continue
+        if "nx" in sample and "ny" in sample:
+            yield float(t), float(sample["nx"]) * width, float(sample["ny"]) * height
+            continue
+        if "ix" in sample and "iy" in sample:
+            yield float(t), float(sample["ix"]), float(sample["iy"])
+            continue
+        if map_info is not None and "gx" in sample and "gy" in sample:
+            ix, iy = map_info.game_to_image(float(sample["gx"]), float(sample["gy"]))
+            yield float(t), float(ix), float(iy)
+
+
+def _snap_to_map(
+    base_image: Image.Image,
+    x: float,
+    y: float,
+    snap_radius: int = 10,
+    black_thresh: int = 10,
+) -> Optional[Tuple[float, float]]:
+    w, h = base_image.size
+    xi = int(x)
+    yi = int(y)
+    if not (0 <= xi < w and 0 <= yi < h):
+        return None
+
+    def is_black(px: int, py: int) -> bool:
+        rgb = base_image.getpixel((px, py))
+        return rgb[0] < black_thresh and rgb[1] < black_thresh and rgb[2] < black_thresh
+
+    if not is_black(xi, yi):
+        return x, y
+
+    best = None
+    best_d2 = None
+    for dy in range(-snap_radius, snap_radius + 1):
+        yy = yi + dy
+        if yy < 0 or yy >= h:
+            continue
+        for dx in range(-snap_radius, snap_radius + 1):
+            xx = xi + dx
+            if xx < 0 or xx >= w:
+                continue
+            if is_black(xx, yy):
+                continue
+            d2 = dx * dx + dy * dy
+            if best_d2 is None or d2 < best_d2:
+                best_d2 = d2
+                best = (float(xx), float(yy))
+    return best
+
+
+def _sanitize_round_points(
+    base_image: Image.Image,
+    round_data: List[Dict[str, float]] | PlayerPath,
+    map_info: Map | None,
+    max_jump: float = 200.0,
+    snap_radius: int = 10,
+    black_thresh: int = 10,
+) -> List[Tuple[float, float, float]]:
+    clean: List[Tuple[float, float, float]] = []
+    prev: Optional[Tuple[float, float]] = None
+    for t, x, y in _iter_round_samples(round_data, map_info, base_image.size):
+        snapped = _snap_to_map(base_image, x, y, snap_radius=snap_radius, black_thresh=black_thresh)
+        if snapped is None:
+            prev = None
+            continue
+        x2, y2 = snapped
+        if prev is not None:
+            dx = x2 - prev[0]
+            dy = y2 - prev[1]
+            if (dx * dx + dy * dy) ** 0.5 > max_jump:
+                prev = None
+                continue
+        clean.append((t, x2, y2))
+        prev = (x2, y2)
+    return clean
+
+
 def _round_color(index: int, total: int) -> tuple[int, int, int, int]:
     if total <= 1:
         return 255, 99, 71, 200
@@ -117,90 +214,21 @@ def _draw_round_paths(
 ) -> Image.Image:
     overlay = Image.new("RGBA", base_image.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
-
-    w, h = base_image.size
-    max_jump = 200  # pixels
     total_rounds = max(len(rounds), 1)
-
-    # How far we are willing to "snap" a point that lands in black background
-    snap_radius = 10  # pixels; try 4..10
-    black_thresh = 10  # background threshold
-
-    def is_black(xi: int, yi: int) -> bool:
-        px = base_image.getpixel((xi, yi))
-        return px[0] < black_thresh and px[1] < black_thresh and px[2] < black_thresh
-
-    def snap_to_map(x: float, y: float) -> tuple[float, float] | None:
-        """
-        If (x,y) lands on black background, search nearby pixels to find the closest
-        non-black pixel and return that as the snapped point. If none found, return None.
-        """
-        xi = int(x)
-        yi = int(y)
-
-        # Must be inside image to even try snapping
-        if not (0 <= xi < w and 0 <= yi < h):
-            return None
-
-        # Already on-map
-        if not is_black(xi, yi):
-            return x, y
-
-        # Search a small square around the point for the nearest non-black pixel
-        best = None
-        best_d2 = None
-        for dy in range(-snap_radius, snap_radius + 1):
-            yy = yi + dy
-            if yy < 0 or yy >= h:
-                continue
-            for dx in range(-snap_radius, snap_radius + 1):
-                xx = xi + dx
-                if xx < 0 or xx >= w:
-                    continue
-                if is_black(xx, yy):
-                    continue
-                d2 = dx * dx + dy * dy
-                if best_d2 is None or d2 < best_d2:
-                    best_d2 = d2
-                    best = (float(xx), float(yy))
-
-        return best
-
     for index, samples in enumerate(rounds.values()):
-        raw_points = list(_iter_round_points(samples, map_info))
-        if len(raw_points) < 2:
+        sanitized = _sanitize_round_points(
+            base_image,
+            samples,
+            map_info,
+            max_jump=200.0,
+            snap_radius=10,
+            black_thresh=10,
+        )
+        if len(sanitized) < 2:
             continue
 
         color = _round_color(index, total_rounds)
-        segment: list[tuple[float, float]] = []
-        prev: tuple[float, float] | None = None
-
-        for (x, y) in raw_points:
-            # 1) If point is near-map, snap it; if far off-map, break.
-            snapped = snap_to_map(x, y)
-            if snapped is None:
-                if len(segment) >= 2:
-                    draw.line(segment, fill=color, width=line_width)
-                segment = []
-                prev = None
-                continue
-
-            x2, y2 = snapped
-
-            # 2) teleport / bad-sample jump filter
-            if prev is not None:
-                dx = x2 - prev[0]
-                dy = y2 - prev[1]
-                if (dx * dx + dy * dy) ** 0.5 > max_jump:
-                    if len(segment) >= 2:
-                        draw.line(segment, fill=color, width=line_width)
-                    segment = []
-
-            segment.append((x2, y2))
-            prev = (x2, y2)
-
-        if len(segment) >= 2:
-            draw.line(segment, fill=color, width=line_width)
+        draw.line([(x, y) for _, x, y in sanitized], fill=color, width=line_width)
 
     return Image.alpha_composite(base_image, overlay)
 
@@ -444,6 +472,57 @@ def render_paths_overlay(
     output_path = _resolve_output_path(paths_json_path, output_png_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     combined.save(output_path)
+
+
+def render_paths_json(
+    paths_json_path: str,
+    map_png_path: str,
+    output_json_path: str,
+    map_info: Map | None = None,
+) -> None:
+    base_image = Image.open(map_png_path).convert("RGBA")
+    width, height = base_image.size
+    output_rounds: Dict[str, List[Dict[str, float]]] = {}
+    output_attack: Dict[str, List[Dict[str, float]]] = {}
+    output_defense: Dict[str, List[Dict[str, float]]] = {}
+
+    rounds = _load_paths(paths_json_path, "all")
+    attack_rounds = _load_paths(paths_json_path, "attack")
+    defense_rounds = _load_paths(paths_json_path, "defense")
+
+    if not rounds and not attack_rounds and not defense_rounds:
+        raise ValueError("No round data found in the paths JSON file.")
+
+    for round_id, samples in rounds.items():
+        cleaned = _sanitize_round_points(base_image, samples, map_info)
+        output_rounds[str(round_id)] = [
+            {"t": t, "nx": x / width, "ny": y / height} for (t, x, y) in cleaned
+        ]
+    for round_id, samples in attack_rounds.items():
+        cleaned = _sanitize_round_points(base_image, samples, map_info)
+        output_attack[str(round_id)] = [
+            {"t": t, "nx": x / width, "ny": y / height} for (t, x, y) in cleaned
+        ]
+    for round_id, samples in defense_rounds.items():
+        cleaned = _sanitize_round_points(base_image, samples, map_info)
+        output_defense[str(round_id)] = [
+            {"t": t, "nx": x / width, "ny": y / height} for (t, x, y) in cleaned
+        ]
+
+    output_path = _resolve_output_path(paths_json_path, output_json_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as out_handle:
+        json.dump(
+            {
+                "source": paths_json_path,
+                "rounds": output_rounds,
+                "attack_rounds": output_attack,
+                "defense_rounds": output_defense,
+            },
+            out_handle,
+            indent=2,
+            ensure_ascii=False,
+        )
 
 
 def render_team_paths_overlay(

@@ -10,7 +10,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from PathScripts.MainPlayerPathDisplay import render_player_paths, _infer_map_name
-from PathScripts.DisplayPath import render_team_paths_overlay, render_team_clusters_overlay
+from PathScripts.DisplayPath import render_team_paths_overlay, render_team_clusters_overlay, render_paths_json
 from PositionalObjects.Map import Map
 
 
@@ -26,10 +26,24 @@ def _player_paths(team_name: str) -> Iterable[Path]:
 def render_team_paths(team_name: str, side: str = "all") -> None:
     # Render overlays for every player's paths JSON in the team folder.
     team_paths_by_map: dict[str, list[Path]] = {}
+    map_cache: dict[str, Map] = {}
     for paths_json in _player_paths(team_name):
         map_name = _infer_map_name(paths_json)
         team_paths_by_map.setdefault(map_name, []).append(paths_json)
         player_name = paths_json.parent.name
+        if map_name not in map_cache:
+            map_json = Path("MapData") / map_name / f"{map_name}.json"
+            if map_json.exists():
+                map_cache[map_name] = Map.from_map_json(str(map_json))
+        map_info = map_cache.get(map_name)
+        if map_info is not None:
+            display_path = paths_json.with_name(f"{paths_json.stem}_display.json")
+            render_paths_json(
+                paths_json_path=str(paths_json),
+                map_png_path=map_info.img_path,
+                output_json_path=str(display_path),
+                map_info=map_info,
+            )
         if side == "both":
             render_player_paths(team_name, player_name, paths_json, side="attack")
             render_player_paths(team_name, player_name, paths_json, side="defense")
