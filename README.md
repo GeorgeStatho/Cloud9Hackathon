@@ -31,8 +31,14 @@ Notes
 - Map overlays require MapData to be present.
 - Generated files are written under Data/<TeamName>/...
 
-
 Troubleshooting
 - If you get 401/403 errors, verify the API key and that the series is accessible.
 - If a run is slow, it is usually scanning large JSONL/zip files.
 - If a Timeout error occurs delete the team's series folder and run the pipeline again
+
+
+Video: 
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=YOUTUBE_VIDEO_ID_HERE
+" target="_blank"><img src="http://img.youtube.com/vi/UBPWAr2XD-I/0.jpg" 
+alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
+
